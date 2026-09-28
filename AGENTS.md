@@ -13,7 +13,7 @@ Setiap kali pengguna memberikan perintah atau instruksi dengan kata kunci:
 - **"pw"** (perintah pintas resmi utama)
 - atau variasi pendukung: **"pindahkan ke website"**, *"deploy ke server"*, *"sinkronkan ke web"*, *"upload ke website"*
 
-Asisten AI **WAJIB MENJALANKAN 4 TAHAPAN UTAMA SECARA OTOMATIS TANPA MEMINTA KONFIRMASI ULANG**:
+Asisten AI **WAJIB MENJALANKAN 5 TAHAPAN UTAMA SECARA OTOMATIS TANPA MEMINTA KONFIRMASI ULANG**:
 
 ### 1. Pre-Deployment Testing Gate (Verifikasi Pengujian Otonom TestSprite)
 - Sebelum berkas dipindahkan ke server web produksi, Asisten AI **WAJIB menjalankan verifikasi pengujian otomatis TestSprite** terhadap modul/halaman web yang mengalami perubahan:
@@ -29,19 +29,31 @@ Asisten AI **WAJIB MENJALANKAN 4 TAHAPAN UTAMA SECARA OTOMATIS TANPA MEMINTA KON
 - Target sentuh tombol navigasi/aksi nyaman dengan jempol (min 34px - 44px).
 - Tabel data dibungkus dalam `.table-scroll-container`.
 
-### 3. Otomatisasi Pembaruan File `.md` ([Arz-WEB.md](file:///c:/Users/Raden/OneDrive/Documents/New%20folder%20(2)/Arz-WEB.md))
+### 3. Otomatisasi Pembaruan File Dokumentasi ([Arz-WEB.md](file:///c:/Users/Raden/OneDrive/Documents/New%20folder%20(2)/Arz-WEB.md) & [README.md](file:///c:/Users/Raden/OneDrive/Documents/New%20folder%20(2)/README.md))
 - Asisten AI **WAJIB secara otomatis memperbarui file `Arz-WEB.md`** sebelum atau bersamaan dengan migrasi ke server web:
   1. **Pembaruan Ringkasan Fitur Ekosistem (Header & Overview)**: Memastikan daftar seluruh pilar aplikasi web yang telah dibuat pada pengantar dokumen (paragraf 1 dan daftar pilar ekosistem) selalu mutakhir (Grimoire Dashboard, Arcanum Finance, Ethol Academic Notifier, dsb.).
   2. **Pembaruan Seksi Spesifikasi Teknis**: Menambahkan seksi spesifikasi teknis baru atau memperbarui seksi spesifikasi modul terkait jika ada fitur/arsitektur yang ditambahkan atau diubah.
   3. **Pencatatan Tabel Riwayat**: Mencatat seluruh fitur baru, refactoring kode, aset baru, atau perbaikan bug pada tabel **Bagian V: Log Riwayat Pembaruan & Progres Implementasi**.
-  4. Menjamin dokumentasi selalu sinkron 1:1 dengan kode produksi yang di-deploy.
+  4. **Pembaruan Portofolio `README.md`**: Menyelaraskan informasi fitur dan arsitektur pada presentasi portofolio GitHub.
+  5. Menjamin dokumentasi selalu sinkron 1:1 dengan kode produksi yang di-deploy.
 
-### 4. Eksekusi Otomatis Deployment ke Nginx Home Server
+### 4. Sinkronisasi Git Commit & Push ke GitHub Portofolio (VCS Sync Gate)
+- Asisten AI **WAJIB melakukan commit Git dan push otomatis ke GitHub**:
+  ```powershell
+  git add .
+  git commit -m "feat/fix/chore: deskripsi ringkas perubahan"
+  git push origin main
+  ```
+- **Zero-Leak Policy**: Memastikan berkas vault sensitif TestSprite, token kredensial (`ethol-config.json`), dan file sementara tetap terisolasi penuh via `.gitignore`.
+- Menjamin repositori GitHub portofolio selalu mutakhir 1:1 dengan versi website yang live.
+
+### 5. Eksekusi Otomatis Deployment ke Nginx Home Server
 - Jalankan skrip PowerShell deployment:
   ```powershell
-  powershell.exe -ExecutionPolicy Bypass -File ".\deploy.ps1"
+  powershell.exe -ExecutionPolicy Bypass -File ".\deploy.ps1" -PushGit
   ```
 - Target Server: `\\100.73.128.8\Data\AppData\nginx\config\www`
+- **Proteksi Server Produksi**: Skrip secara otomatis memastikan folder `.git` tidak pernah tersalin ke server Nginx publik.
 - Laporkan status berkas yang terpasang, tautan live website, dan konfirmasi pembaruan file `.md`.
 
 ## 2. Protokol Wajib: Manajemen Shortcut Katalog Proyek & Siklus Status

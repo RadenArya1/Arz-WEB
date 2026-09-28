@@ -7,7 +7,9 @@
 
 param(
     [switch]$RunTest,
-    [switch]$SkipTest
+    [switch]$SkipTest,
+    [switch]$PushGit,
+    [string]$CommitMessage = ""
 )
 
 $sourceDir = $PSScriptRoot
@@ -130,6 +132,31 @@ if (Test-Path (Join-Path $sourceDir "ethol-notifier\screenshots")) {
         $srcFile = Join-Path $sourceDir "ethol-notifier\screenshots\$f"
         if (Test-Path $srcFile) {
             Copy-Item -Path $srcFile -Destination (Join-Path $backendScreenshots $f) -Force
+        }
+    }
+}
+
+# 3. Sinkronisasi Git & Portofolio GitHub (Opsional jika switch -PushGit disertakan atau repo aktif)
+if ($PushGit) {
+    Write-Host "[GIT] Memeriksa status repositori dan menyinkronkan ke GitHub..." -ForegroundColor Cyan
+    $gitCmd = "$env:LOCALAPPDATA\Programs\Git\cmd\git.exe"
+    if (!(Get-Command git -ErrorAction SilentlyContinue) -and (Test-Path $gitCmd)) {
+        $env:Path = "$env:LOCALAPPDATA\Programs\Git\cmd;" + $env:Path
+    }
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        $status = git status --porcelain
+        if ($status) {
+            $msg = if ($CommitMessage) { $CommitMessage } else { "deploy: sync production build to GitHub portfolio ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))" }
+            git add .
+            git commit -m $msg
+            Write-Host "[GIT] Commit berhasil dibuat: $msg" -ForegroundColor Green
+        }
+        Write-Host "[GIT] Melakukan git push origin main..." -ForegroundColor Cyan
+        git push origin main
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[GIT] ✅ Berhasil disinkronkan ke GitHub!" -ForegroundColor Green
+        } else {
+            Write-Host "[GIT-WARN] Gagal git push (pastikan remote repo dan autentikasi telah siap)." -ForegroundColor Yellow
         }
     }
 }
