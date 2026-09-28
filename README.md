@@ -63,12 +63,13 @@ flowchart TD
   - **Audit & Export:** Ekspor data riwayat transaksi dalam format terstruktur.
 
 ### 3. 🎓 Ethol Academic Notifier (`ethol-notifier/`)
-*Asisten Akademik Otonom & Pemantau Presensi Perkuliahan*
+*Executive Presensi Deck & Asisten Akademik Otonom*
 - **Fitur Utama:**
-  - **Multi-Node Fallback Gateway:** Gerbang proxy `api.php` cerdas dengan failover otomatis (<10ms respons) jika node utama sibuk.
-  - **Attendance Screenshot Stream:** Pengarsipan dan verifikasi visual bukti presensi kuliah secara real-time.
-  - **Automated Alerts & Push Notification:** Notifikasi tepat waktu untuk jadwal kelas, pengisian daftar hadir, dan pengingat tugas.
-  - **PWA Ready:** Dukungan Progressive Web App untuk pemasangan instan di perangkat mobile (Android/iOS).
+  - **Executive Presensi Deck:** Radial SVG progress ring countdown yang dinamis, kartu identitas mahasiswa, dan status engine reaktif.
+  - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu thumbnail bukti kehadiran dan lightbox perbesar.
+  - **Dynamic Theme Metamorphosis:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif.
+  - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
+  - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
 
 ---
 

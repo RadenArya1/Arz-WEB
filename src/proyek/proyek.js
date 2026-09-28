@@ -24,10 +24,10 @@
       icon: 'fa-calendar-check',
       status: 'active',
       statusLabel: 'Aktif',
-      desc: 'Automasi presensi perkuliahan mandiri via ETHOL PENS (SSO CAS), live stream konsol Puppeteer, dan monitoring status kehadiran.',
+      desc: 'Executive Presensi Deck ETHOL PENS — automasi presensi cerdas, radial countdown ring, linimasa kehadiran real-time, audit bukti layar, dan metamorfosis warna tema saat loop.',
       target: 'ethol-notifier/ (Web Mandiri)',
       url: 'ethol-notifier/index.html',
-      tags: ['Ethol PENS', 'Puppeteer', 'Auto Absen', 'CAS SSO', 'Live Stream', 'SSE']
+      tags: ['Ethol PENS', 'Puppeteer', 'Executive Deck', 'Auto Absen', 'Radial Ring', 'Loop Theme', 'SSE']
     },
     {
       id: 'proj_student_web',
@@ -52,17 +52,6 @@
       tags: ['Vanilla JS', 'Canvas Particle', 'Theme System', 'Web Audio']
     },
     {
-      id: 'proj_testsprite_sentinel',
-      title: 'TestSprite Sentinel Hub',
-      icon: 'fa-vial-circle-check',
-      status: 'active',
-      statusLabel: 'Aktif',
-      desc: 'Pusat kendali & pemantau otonom TestSprite: pantau saldo sisa 15 token akun, rotasi kuota, waktu reset/pemulihan, runner Playwright, dan video hasil uji.',
-      target: 'testsprite_tests/ (Localhost Only)',
-      url: 'testsprite_tests/index.html',
-      tags: ['TestSprite', 'Playwright', 'Token Vault', 'Localhost Only', 'Sentinel', 'Autonomous QA']
-    },
-    {
       id: 'proj_alchemist_wiki',
       title: 'Alchemist Study Notes & Wiki',
       icon: 'fa-feather-pointed',
@@ -83,6 +72,17 @@
       target: 'Webhook Receiver',
       url: '#',
       tags: ['Telegram Bot API', 'Discord.js', 'Webhook', 'Push Alert']
+    },
+    {
+      id: 'proj_grimoire_lab',
+      title: 'Grimoire Sandbox & Tester Hub',
+      icon: 'fa-flask-vial',
+      status: 'active',
+      statusLabel: 'Aktif',
+      desc: 'Pusat isolasi website uji coba purwarupa (lab/auto-absen/) dan web tester TestSprite (testsprite_tests/) — eksklusif localhost, terproteksi dari deploy pw.',
+      target: 'lab/ (Localhost Only)',
+      url: 'lab/index.html',
+      tags: ['Sandbox', 'TestSprite', 'Web Tester', 'Localhost Only', 'Experimental']
     }
   ];
 

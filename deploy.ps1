@@ -43,13 +43,25 @@ if (!(Test-Path $targetDir)) {
     exit 1
 }
 
-# 2. Safety Guard: Isolasi Eksklusif TestSprite di Localhost (Zero-Leak ke Nginx)
-# Memastikan berkas pengujian lokal dan token sensitif tidak pernah ada di server Nginx produksi
-$prohibitedItems = @("testsprite_tests", "mcp_config.json", ".agents", "testsprite_vault.json", "rotate-testsprite.ps1", "testsprite-runner.js", ".git")
+# 2. Safety Guard: Isolasi Eksklusif Sandbox Lab & TestSprite di Localhost (Zero-Leak ke Nginx)
+# Memastikan berkas uji coba, lab, tester, dan token sensitif tidak pernah ada di server Nginx produksi
+$prohibitedItems = @(
+    "testsprite_tests",
+    "lab",
+    "auto-absen",
+    "downloaded_skills",
+    "scratch",
+    "mcp_config.json",
+    ".agents",
+    "testsprite_vault.json",
+    "rotate-testsprite.ps1",
+    "testsprite-runner.js",
+    ".git"
+)
 foreach ($item in $prohibitedItems) {
     $remotePath = Join-Path $targetDir $item
     if (Test-Path $remotePath) {
-        Write-Host "[GUARD] Membersihkan berkas pengujian lokal di Nginx: $item" -ForegroundColor Yellow
+        Write-Host "[GUARD] Membersihkan berkas uji coba/tester di server Nginx: $item" -ForegroundColor Yellow
         Remove-Item -Path $remotePath -Recurse -Force -ErrorAction SilentlyContinue
     }
 }

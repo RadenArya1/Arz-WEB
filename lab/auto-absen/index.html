@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto Absen • Presensi Deck</title>
+  <meta name="description" content="Dashboard Presensi Cerdas Ethol PENS — Grimoire Ecosystem" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="auto-absen.css" />
+</head>
+<body>
+
+  <!-- Ambient Dynamic Canvas -->
+  <canvas id="ambientCanvas"></canvas>
+
+  <div class="deck-wrapper">
+
+    <!-- ═══════════════════════════════════════
+         NAVBAR / HEADER
+    ═══════════════════════════════════════ -->
+    <header class="deck-navbar">
+      <div class="nav-left">
+        <div class="nav-logo">
+          <i class="fa-solid fa-fingerprint"></i>
+        </div>
+        <div class="nav-title-group">
+          <div class="nav-title-row">
+            <h1>Auto Absen</h1>
+            <span class="nav-version-tag">Executive Deck</span>
+          </div>
+          <p class="nav-subtitle">Asisten Presensi Cerdas Ethol PENS</p>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <!-- Server Connectivity Badge -->
+        <div class="status-chip" id="serverPill">
+          <span class="chip-pulse" id="serverDot"></span>
+          <span id="serverLabel" class="chip-text">Memeriksa Server…</span>
+        </div>
+
+        <!-- Clock -->
+        <div class="clock-chip">
+          <i class="fa-regular fa-clock"></i>
+          <span id="topbarClock">00:00:00</span>
+        </div>
+
+        <!-- Return to Grimoire -->
+        <a href="../index.html" class="nav-btn-back" title="Kembali ke Katalog Grimoire">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Grimoire</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════
+         HERO COMMAND DECK (CENTRAL HUB)
+    ═══════════════════════════════════════ -->
+    <section class="command-deck" aria-label="Pusat Kendali Presensi">
+      
+      <!-- Top Row: Ring Status & Student Summary -->
+      <div class="deck-top-grid">
+        
+        <!-- Status Hub with Circular Radial Countdown -->
+        <div class="status-radial-hub" id="statusHubCard">
+          <div class="radial-ring-container">
+            <svg class="radial-svg" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="ring-progress" id="radialProgressRing" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div class="radial-center-content">
+              <div class="radial-icon" id="hubStateIcon">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <span class="radial-state-text" id="hubStateLabel">SIAP</span>
+            </div>
+          </div>
+
+          <div class="radial-info">
+            <div class="hub-status-header">
+              <span class="hub-eyebrow" id="hubEyebrow">Status Operasional</span>
+              <h2 class="hub-headline" id="hubHeadline">Sistem Siap Absen</h2>
+            </div>
+            <p class="hub-desc" id="hubDesc">
+              Tekan tombol di bawah untuk memeriksa dan menyelesaikan absensi sekarang, atau aktifkan mode pengawasan loop.
+            </p>
+            <div class="hub-metrics-row">
+              <div class="metric-mini-chip">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Eksekusi Terakhir: <strong id="hubLastRun">—</strong></span>
+              </div>
+              <div class="metric-mini-chip">
+                <i class="fa-solid fa-circle-check" style="color:var(--ok)"></i>
+                <span>Hasil: <strong id="hubLastResult">Belum ada</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Profile & Quick Stat Card -->
+        <div class="student-profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar">
+              <i class="fa-solid fa-user-graduate"></i>
+            </div>
+            <div class="profile-meta">
+              <span class="profile-badge"><i class="fa-solid fa-check"></i> CAS SSO Terhubung</span>
+              <h3 class="profile-name">Raden Davino Arya</h3>
+              <span class="profile-id">radenarya@iet.student.pens.ac.id</span>
+            </div>
+          </div>
+          <div class="profile-specs">
+            <div class="spec-item">
+              <span class="spec-label">Target Portal</span>
+              <span class="spec-value">ethol.pens.ac.id</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Total Presensi 24 Jam</span>
+              <span class="spec-value highlight-num" id="statPresensiCount">0</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Tugas Terdekat</span>
+              <span class="spec-value highlight-warn" id="statTaskCount">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Row: Unified Smart Action Dock -->
+      <div class="action-dock" id="actionDock">
+        <div class="dock-actions-left">
+          <!-- Primary Action: Absen Sekarang -->
+          <button id="btnRunNow" class="btn-dock btn-dock-primary" onclick="runAbsen()" aria-label="Jalankan Presensi Sekarang">
+            <div class="btn-shimmer"></div>
+            <i class="fa-solid fa-play"></i>
+            <div class="btn-dock-text">
+              <span class="btn-main-label">Presensi Instan</span>
+              <span class="btn-sub-label">Jalankan verifikasi sekarang</span>
+            </div>
+            <kbd class="shortcut-chip">Ctrl+R</kbd>
+          </button>
+
+          <!-- Toggle Loop Mode -->
+          <button id="btnToggleLoop" class="btn-dock btn-dock-loop" onclick="toggleLoopMode()" aria-label="Toggle Pengawasan Loop">
+            <i class="fa-solid fa-arrows-rotate" id="loopIcon"></i>
+            <div class="btn-dock-text">
+              <span class="btn-main-label" id="loopBtnLabel">Mulai Loop Otomatis</span>
+              <span class="btn-sub-label" id="loopBtnSub">Interval acak 3-5 menit</span>
+            </div>
+          </button>
+
+          <!-- Test Screenshot Proof -->
+          <button id="btnTestScreenshot" class="btn-dock btn-dock-secondary" onclick="testPresensiStream()" aria-label="Uji Bukti Kamera">
+            <i class="fa-solid fa-camera"></i>
+            <div class="btn-dock-text">
+              <span class="btn-main-label">Audit Bukti Kamera</span>
+              <span class="btn-sub-label">Ambil tangkapan layar simulasi</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="dock-actions-right">
+          <button class="btn-icon-soft" onclick="clearConsole()" title="Bersihkan Catatan Presensi">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+          <button class="btn-icon-soft" onclick="loadTasks()" title="Segarkan Tugas">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         DUAL-DECK WORKSPACE: TIMELINE & TUGAS
+    ═══════════════════════════════════════ -->
+    <main class="deck-workspace">
+
+      <!-- LEFT: PRESENSI ACTIVITY TIMELINE -->
+      <section class="deck-panel panel-timeline">
+        <div class="panel-head">
+          <div class="panel-head-title">
+            <i class="fa-solid fa-timeline"></i>
+            <h2>Linimasa Presensi Hari Ini</h2>
+            <span class="count-pill" id="timelineCountBadge">0 Berhasil</span>
+          </div>
+          <div class="panel-head-actions">
+            <span class="retention-hint"><i class="fa-regular fa-clock"></i> Riwayat 24 Jam</span>
+          </div>
+        </div>
+
+        <!-- Presensi Feed / Timeline -->
+        <div class="timeline-container" id="timelineContainer">
+          <!-- Empty State (Default) -->
+          <div class="timeline-empty" id="timelineEmpty">
+            <div class="empty-icon-ring">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <h3>Belum Ada Presensi Tercatat</h3>
+            <p>
+              Saat jadwal kuliah Anda dibuka dan sistem berhasil melakukan absensi di Ethol, kartu bukti kehadiran akan langsung muncul di linimasa ini.
+            </p>
+            <div class="empty-hint">
+              <i class="fa-solid fa-shield-check"></i>
+              <span>Tekan <strong>Presensi Instan</strong> untuk memeriksa kelas saat ini</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: ACADEMIC TASKS & SCHEDULE -->
+      <section class="deck-panel panel-tasks">
+        <div class="panel-head">
+          <div class="panel-head-title">
+            <i class="fa-solid fa-list-check"></i>
+            <h2>Tugas Akademik</h2>
+            <span class="count-pill pill-warn" id="taskCountBadge">Memuat…</span>
+          </div>
+          <div class="panel-head-actions">
+            <span class="retention-hint"><i class="fa-solid fa-bell"></i> Deadline ≤ 5 Hari</span>
+          </div>
+        </div>
+
+        <div class="task-list-wrapper" id="taskListContainer">
+          <div class="task-loading">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>Memeriksa daftar tugas Ethol…</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ═══════════════════════════════════════
+         COLLAPSIBLE DIAGNOSTIC CONSOLE TRAY
+    ═══════════════════════════════════════ -->
+    <section class="diagnostic-tray" id="diagnosticTray">
+      <div class="tray-header" onclick="toggleDiagnosticsTray()" title="Klik untuk membuka/menutup log server">
+        <div class="tray-title-group">
+          <i class="fa-solid fa-terminal tray-icon"></i>
+          <span class="tray-title">Log Diagnostik Server</span>
+          <div class="tray-live-tag">
+            <span class="tray-live-dot"></span>
+            <span>STREAM LIVE</span>
+          </div>
+          <span class="tray-item-counter" id="trayLogCounter">0 pesan</span>
+        </div>
+        <div class="tray-controls" onclick="event.stopPropagation()">
+          <button class="tray-btn-action" onclick="clearConsole()" title="Bersihkan log">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+          <button class="tray-btn-toggle" onclick="toggleDiagnosticsTray()" id="btnToggleTray" title="Buka / Tutup">
+            <i class="fa-solid fa-chevron-up" id="trayChevron"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="tray-body" id="trayBody">
+        <div class="console-screen" id="consoleScreen">
+          <div class="console-empty" id="consoleWelcome">
+            <div class="empty-glow-ring"><i class="fa-solid fa-code"></i></div>
+            <p>Log aktivitas backend dan rincian HTTP request akan terekam di sini secara langsung.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /.deck-wrapper -->
+
+  <!-- ═══════════════════════════════════════
+       MOBILE BOTTOM STICKY ACTION BAR
+  ═══════════════════════════════════════ -->
+  <aside class="mobile-action-bar" aria-label="Aksi Cepat Mobile">
+    <button class="mobile-btn-primary" onclick="runAbsen()">
+      <i class="fa-solid fa-play"></i>
+      <span>Presensi</span>
+    </button>
+    <button class="mobile-btn-loop" id="mobileBtnLoop" onclick="toggleLoopMode()">
+      <i class="fa-solid fa-arrows-rotate" id="mobileLoopIcon"></i>
+      <span id="mobileLoopText">Loop</span>
+    </button>
+    <button class="mobile-btn-aux" onclick="testPresensiStream()" title="Uji Screenshot">
+      <i class="fa-solid fa-camera"></i>
+    </button>
+    <button class="mobile-btn-aux" onclick="toggleDiagnosticsTray()" title="Buka Konsol">
+      <i class="fa-solid fa-terminal"></i>
+    </button>
+  </aside>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-wrap" id="toastContainer"></div>
+
+  <!-- Modal Lightbox Screenshot Proof -->
+  <div class="modal-backdrop" id="screenshotModal" style="display:none;" onclick="closeScreenshotModal(event)">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-camera-retro"></i>
+          <div>
+            <h3 id="modalSsTitle">Bukti Layar Presensi</h3>
+            <span id="modalSsSubtitle" class="modal-sub">—</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeScreenshotModal()" title="Tutup">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img id="modalSsImage" src="" alt="Bukti Presensi Ethol" />
+      </div>
+      <div class="modal-foot">
+        <span class="modal-foot-badge"><i class="fa-solid fa-shield-halved"></i> Terverifikasi Server Ethol</span>
+        <span class="modal-foot-timer"><i class="fa-regular fa-clock"></i> Tersimpan selama 24 jam</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="auto-absen.js"></script>
+</body>
+</html>

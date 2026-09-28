@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grimoire Lab • Sandbox & Tester Hub</title>
+  <meta name="description" content="Pusat isolasi website uji coba, purwarupa eksperimen, dan tester otonom Grimoire Ecosystem" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg-core: #070d14;
+      --bg-card: rgba(14, 25, 38, 0.75);
+      --border-color: rgba(56, 189, 248, 0.15);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --danger: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #8096a8;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-core);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+
+    .lab-container {
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .lab-header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px 28px;
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(16, 185, 129, 0.2));
+      border: 1px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: var(--accent);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .brand-title h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .brand-title p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .badge-sandbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--warn);
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-ico {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      color: var(--accent);
+    }
+
+    .status-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+    }
+
+    .status-tag.trial {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .status-tag.tester {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--ok);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .btn-open {
+      color: var(--accent);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .notice-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 0.82rem;
+      color: #fde68a;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+
+    .notice-box i {
+      font-size: 1.1rem;
+      color: var(--warn);
+      margin-top: 2px;
+    }
+
+    .btn-back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      align-self: flex-start;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s;
+    }
+
+    .btn-back-home:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.07);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lab-container">
+
+    <a href="../index.html" class="btn-back-home">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Grimoire Utama</span>
+    </a>
+
+    <!-- Header -->
+    <header class="lab-header">
+      <div class="brand-title">
+        <div class="brand-icon">
+          <i class="fa-solid fa-flask-vial"></i>
+        </div>
+        <div>
+          <h1>Grimoire Sandbox & Tester Hub</h1>
+          <p>Lingkungan Terisolasi Khusus Purwarupa & Pengujian (Localhost Only)</p>
+        </div>
+      </div>
+      <div class="badge-sandbox">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>NON-DEPLOYABLE (PW PROTECTED)</span>
+      </div>
+    </header>
+
+    <!-- Notice Box -->
+    <div class="notice-box">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div>
+        <strong>Area Eksperimental & Pengujian Lokal:</strong> Seluruh modul di dalam folder <code>lab/</code> dan <code>testsprite_tests/</code> adalah purwarupa uji coba dan tester otonom. Saat protokol <code>pw</code> dijalankan, seluruh folder ini diisolasi dan tidak akan pernah dipublikasikan ke server Nginx produksi CasaOS.
+      </div>
+    </div>
+
+    <!-- Grid Cards -->
+    <div class="grid-cards">
+
+      <!-- Card: Auto Absen Prototype -->
+      <a href="auto-absen/index.html" class="card-item">
+        <div class="card-top">
+          <div class="card-ico">
+            <i class="fa-solid fa-fingerprint"></i>
+          </div>
+          <span class="status-tag trial">Purwarupa Uji Coba</span>
+        </div>
+        <h2 class="card-title">Auto Absen (Staging Lab)</h2>
+        <p class="card-desc">
+          Purwarupa eksperimental implementasi Master Frontend Studio dan Master Humanizer sebelum dileburkan ke produksi resmi.
+        </p>
+        <div class="card-footer">
+          <span>Target: lab/auto-absen/</span>
+          <span class="btn-open">Buka Lab <i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+      </a>
+
+      <!-- Card: TestSprite Sentinel Hub (Web Tester) -->
+      <a href="../testsprite_tests/index.html" class="card-item">
+        <div class="card-top">
+          <div class="card-ico">
+            <i class="fa-solid fa-vial-circle-check"></i>
+          </div>
+          <span class="status-tag tester">Web Tester • Localhost Only</span>
+        </div>
+        <h2 class="card-title">TestSprite Sentinel (Web Tester)</h2>
+        <p class="card-desc">
+          Web tester resmi ekosistem: menjalankan verifikasi Playwright otomatis sebelum eksekusi 'pw', pemantauan 15 token akun TestSprite, rotasi kuota, dan audit QA otonom.
+        </p>
+        <div class="card-footer">
+          <span>Target: testsprite_tests/ (Tester)</span>
+          <span class="btn-open">Buka Tester TestSprite <i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+      </a>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

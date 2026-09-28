@@ -13,6 +13,7 @@ mcp_config.json
 # Dependencies & Scratch Artifacts
 node_modules/
 scratch/
+downloaded_skills/
 package-lock.json
 
 # Local Runtime Buffers, Credentials & Logs
