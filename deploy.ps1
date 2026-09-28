@@ -43,7 +43,7 @@ if (!(Test-Path $targetDir)) {
 
 # 2. Safety Guard: Isolasi Eksklusif TestSprite di Localhost (Zero-Leak ke Nginx)
 # Memastikan berkas pengujian lokal dan token sensitif tidak pernah ada di server Nginx produksi
-$prohibitedItems = @("testsprite_tests", "mcp_config.json", ".agents", "testsprite_vault.json", "rotate-testsprite.ps1", "testsprite-runner.js")
+$prohibitedItems = @("testsprite_tests", "mcp_config.json", ".agents", "testsprite_vault.json", "rotate-testsprite.ps1", "testsprite-runner.js", ".git")
 foreach ($item in $prohibitedItems) {
     $remotePath = Join-Path $targetDir $item
     if (Test-Path $remotePath) {
