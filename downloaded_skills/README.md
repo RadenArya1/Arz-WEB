@@ -1,46 +1,51 @@
 # 📚 Koleksi Skill Humanizer & Frontend (Agentic Awesome Skills)
 
-Koleksi skill ini diunduh langsung dari repositori resmi [sickn33/agentic-awesome-skills](https://github.com/sickn33/agentic-awesome-skills) untuk memperkaya kemampuan AI Agent dalam dua pilar utama:
-1. **Humanizer & Anti-AI**: Menghilangkan gaya bahasa robotik, basa-basi AI, dan menjadikan tulisan mengalir natural.
-2. **Frontend & UI/UX Engineering**: Menjamin antarmuka berstandar visual kelas dunia, anti-slop, responsif, dan berperforma tinggi.
+Koleksi skill ini diunduh langsung dari repositori resmi [sickn33/agentic-awesome-skills](https://github.com/sickn33/agentic-awesome-skills) dan telah digabungkan menjadi **2 Master Skills Terpadu** untuk memaksimalkan performa dan meminimalkan beban memori (*token context*) AI:
 
 ---
 
-## ✍️ Bagian I: Skill Humanizer & Anti-AI
+## 🏆 MASTER SKILLS (Rekomendasi Utama)
 
-| No | Skill | Fokus & Manfaat |
-| :---: | :--- | :--- |
-| 1 | **`avoid-ai-writing`** | Menghapus 21 kategori pola penulisan khas AI dan tabel pengganti 43 kata klise (*leverage*, *robust*, *delve into*, dll.). |
-| 2 | **`unslop`** | Pipeline CLI deterministik untuk membersihkan pola tulisan AI sebelum diserahkan ke produksi. |
-| 3 | **`unslop-file`** | *Deep humanization* file Markdown/teks tanpa merusak blok kode teknis atau format URL. |
-| 4 | **`unslop-commit`** | Format pesan Git commit bergaya engineer asli (*Conventional Commits*) yang padat, lugas, dan bebas marketing fluff. |
-| 5 | **`unslop-review`** | Menulis komentar review kode PR yang solutif, langsung pada baris masalah, tanpa basa-basi korporat berlebih. |
+Kedua master skill ini merupakan gabungan terpadu dari seluruh 20 skill individual di bawah dan telah aktif di direktori [`.agents/skills/`](../.agents/skills/):
 
-*(Varian bahasa Mandarin `humanize-chinese` dan `de-ai-writer` dikecualikan).*
+### 1. ✍️ [`master-humanizer`](master-humanizer/SKILL.md)
+*Penggabungan 5 skill penulisan anti-AI:*
+- **Modul 1 (Anti-AI Writing)**: Menghapus 21 kategori pola tulisan AI dan tabel pengganti 43 kata klise (*leverage*, *robust*, *delve*, *testament to*, dll.).
+- **Modul 2 (Deep File Humanizer)**: Menghumanisasi dokumen Markdown/teks tanpa merusak blok kode atau URL teknis.
+- **Modul 3 (Engineering Git Commits)**: Format commit *Conventional Commits* yang lugas, padat, dan bebas kata sifat pemasaran.
+- **Modul 4 (Honest PR Reviews)**: Format komentar review kode yang langsung ke inti baris masalah (`L<line>: <severity>: <observation>. <fix>.`).
 
----
-
-## 🎨 Bagian II: Skill Frontend & UI/UX Excellence
-
-| No | Skill | Fokus & Manfaat |
-| :---: | :--- | :--- |
-| 1 | **`anti-ui-slop`** | Mencegah desain AI generik (*vibe-coding*). Memaksa kepatuhan pada design tokens nyata, state lengkap (*empty/loading/error*), dan *Hard Finish Gate*. |
-| 2 | **`anti-slop-design`** | Menjaga estetika antarmuka agar tidak murahan, menggunakan hirarki visual tajam dan kontras profesional. |
-| 3 | **`frontend-developer`** | Standar implementasi arsitektur frontend modern (React, Next.js, ES6+) bebas lag virtual DOM. |
-| 4 | **`frontend-design`** | Panduan layout visual, tipografi proporsional, grid/flexbox, dan penataan ruang estetis (*spacing*). |
-| 5 | **`web-design-guidelines`** | Standar panduan desain web resmi dari Vercel Labs untuk pengalaman pengguna (*UX*) kelas dunia. |
-| 6 | **`ui-ux-pro-max`** | Pola antarmuka tingkat lanjut, micro-interactions halus, animasi responsif, dan transisi elegan. |
-| 7 | **`ui-ux-designer`** | Prinsip dasar desain produk, navigasi ramah jempol (*thumb-friendly*), dan user journey yang jelas. |
-| 8 | **`frontend-architecture`** | Penataan struktur kode frontend modular, pemisahan logika dari tampilan (*clean separation of concerns*). |
-| 9 | **`design-system`** | Pembangunan dan pengelolaan token desain, warna HSL terstandar, dan komponen yang dapat digunakan ulang (*reusable*). |
-| 10 | **`design-taste-frontend`** | Mengasah *taste* estetika visual AI agar hasil render menyerupai website SaaS / startup Silicon Valley papan atas. |
-| 11 | **`tailwind-patterns`** | Pola penyusunan styling Tailwind CSS yang bersih, modular, dan mudah dirawat. |
-| 12 | **`shadcn`** | Panduan komponen headless & customizable UI modern yang elegan dan aksesibel. |
-| 13 | **`frontend-seo`** | Optimasi metadata sosial (OpenGraph, Twitter Cards), semantic tags, dan audit indeks Google. |
-| 14 | **`senior-frontend`** | Standar audit rekayasa frontend level senior: efisiensi bundle, caching, dan zero visual layout shifts. |
-| 15 | **`frontend-ui-dark-ts`** | Arsitektur tema gelap (*dark mode*) modern dengan TypeScript, kontras tinggi yang nyaman di mata. |
+### 2. 🎨 [`master-frontend-studio`](master-frontend-studio/SKILL.md)
+*Penggabungan 15 skill rekayasa antarmuka web:*
+- **Pilar 1 (Anti-UI-Slop & Quality Gate)**: Mewajibkan 4 state lengkap (*loading, empty, error, active*), palet HSL harmonis (bukan warna generik mentah), dan *Hard Finish Gate*.
+- **Pilar 2 (Ergonomi Mobile-First)**: Bebas horizontal overflow (`max-width: 100vw; overflow-x: hidden`), wadah tabel scrollable, dan target sentuh jempol (min 38px - 44px).
+- **Pilar 3 (Micro-Interactions & Vercel Guidelines)**: Elevasi hover halus, transisi modal, dan tipografi modern berskala kontras WCAG AA.
+- **Pilar 4 (Arsitektur Komponen Bersih)**: Pemisahan logika dari tampilan, design tokens konsisten, dan struktur HTML semantik (SEO friendly).
 
 ---
 
-## 🛠️ Status Integrasi Antigravity
-Seluruh 20 skill di atas telah disinkronkan ke direktori **`.agents/skills/`**. Anda dapat memanggil keahlian mana pun kapan saja selama sesi percakapan pair-programming!
+## 🗃️ Arsip Skill Individual (20 Skill Referensi Mentah)
+
+### A. Sub-Skill Humanizer
+1. [`avoid-ai-writing`](avoid-ai-writing/SKILL.md)
+2. [`unslop`](unslop/SKILL.md)
+3. [`unslop-file`](unslop-file/SKILL.md)
+4. [`unslop-commit`](unslop-commit/SKILL.md)
+5. [`unslop-review`](unslop-review/SKILL.md)
+
+### B. Sub-Skill Frontend
+1. [`anti-ui-slop`](anti-ui-slop/SKILL.md)
+2. [`anti-slop-design`](anti-slop-design/SKILL.md)
+3. [`web-design-guidelines`](web-design-guidelines/SKILL.md)
+4. [`frontend-developer`](frontend-developer/SKILL.md)
+5. [`frontend-design`](frontend-design/SKILL.md)
+6. [`ui-ux-pro-max`](ui-ux-pro-max/SKILL.md)
+7. [`ui-ux-designer`](ui-ux-designer/SKILL.md)
+8. [`frontend-architecture`](frontend-architecture/SKILL.md)
+9. [`design-system`](design-system/SKILL.md)
+10. [`design-taste-frontend`](design-taste-frontend/SKILL.md)
+11. [`tailwind-patterns`](tailwind-patterns/SKILL.md)
+12. [`shadcn`](shadcn/SKILL.md)
+13. [`frontend-seo`](frontend-seo/SKILL.md)
+14. [`senior-frontend`](senior-frontend/SKILL.md)
+15. [`frontend-ui-dark-ts`](frontend-ui-dark-ts/SKILL.md)
