@@ -1,0 +1,602 @@
+/* =========================================================
+   SHARED STYLES - GRIMOIRE ARZ
+   Tokens, Typography, Reset, Open Book Stage & Tab Container
+   ========================================================= */
+
+:root {
+  --bg-dark: #0a110c;
+  --bg-surface: rgba(16, 28, 20, 0.82);
+  --bg-card: rgba(22, 38, 28, 0.75);
+  --bg-card-hover: rgba(30, 52, 38, 0.85);
+  --border-gold: rgba(229, 193, 88, 0.35);
+  --border-gold-bright: #e5c158;
+  --gold-primary: #f5d77f;
+  --gold-light: #fff2b2;
+  --gold-dark: #b8860b;
+  --text-main: #f0f6f0;
+  --text-muted: #9eb8a1;
+  --text-dim: #6d8671;
+  --accent-leather: #52231e;
+  --accent-crimson: #801d1d;
+  --font-magic: 'Cinzel', serif;
+  --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-rune: 'MedievalSharp', cursive;
+  --shadow-gold: 0 0 20px rgba(229, 193, 88, 0.25);
+  --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ================= BACKGROUND PARTICLES ================= */
+#magicParticles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* ================= AMBIENT SUNLIGHT ================= */
+.ambient-sunlight {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle at 40% 30%, rgba(255, 235, 170, 0.15) 0%, rgba(255, 215, 0, 0.04) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 2;
+  animation: sunlightPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes sunlightPulse {
+  0% { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.05); }
+}
+
+/* ================= DASHBOARD VIEW (OPEN GRIMOIRE FULL SCREEN) ================= */
+.dashboard-view {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #0c180e;
+  z-index: 10;
+}
+
+.dashboard-view.hidden {
+  display: none !important;
+}
+
+/* ================= OPEN BOOK STAGE (FULL SCREEN) ================= */
+.open-book-stage {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+
+.open-book-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100vw, calc(100vh * (1024 / 575)));
+  height: max(100vh, calc(100vw * (575 / 1024)));
+  aspect-ratio: 1024 / 575;
+  overflow: hidden;
+  user-select: none;
+}
+
+.open-book-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
+  filter: contrast(1.02) saturate(1.04);
+}
+
+/* ================= 3-PANEL SYSTEM (BASE BOOK PANEL) ================= */
+.book-panel {
+  position: absolute;
+  z-index: 10;
+  box-sizing: border-box;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  transition: var(--transition-smooth);
+}
+
+.book-panel:hover {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* ================= RIGHT PAGE TOP PANEL CONTAINER ================= */
+.page-right-top {
+  left: calc(52.2% - 1cm);
+  top: 4.5%;
+  width: 38.8%;
+  height: 60%;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-top-scroll {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+/* ================= RIGHT PAGE TABS & WORKSPACE ================= */
+.grimoire-tabs {
+  display: flex;
+  gap: 5px;
+  background: rgba(60, 25, 15, 0.08);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid rgba(140, 95, 45, 0.25);
+}
+
+.g-tab {
+  flex: 1;
+  padding: 5px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #5c301a;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: var(--transition-smooth);
+}
+
+.g-tab:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: #220f07;
+}
+
+.g-tab.active {
+  background: linear-gradient(135deg, #78261e, #47110e);
+  color: #fff2b2;
+  box-shadow: 0 2px 8px rgba(70, 20, 15, 0.25);
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeInTab 0.3s ease forwards;
+}
+
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Parchment Card Container */
+.parchment-box {
+  background: rgba(255, 252, 244, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(160, 115, 60, 0.28);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 
+    0 3px 12px rgba(45, 25, 10, 0.06),
+    inset 0 0 15px rgba(220, 195, 150, 0.15);
+  color: #26160d;
+  transition: var(--transition-smooth);
+}
+
+.parchment-box:hover {
+  background: rgba(255, 252, 244, 0.32);
+  border-color: rgba(160, 115, 60, 0.5);
+  box-shadow: 0 4px 15px rgba(45, 25, 10, 0.1);
+}
+
+.box-subtitle {
+  font-family: var(--font-magic);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #5c2411;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.box-subtitle i {
+  color: #b45309;
+}
+
+.box-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ================= RESPONSIVE DESIGN & MOBILE FLOATING SWITCHER ================= */
+
+/* Floating Action Button (Mobile Switcher) */
+.mobile-page-fab {
+  display: none !important;
+}
+
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  .page-left {
+    left: 6.8%;
+    width: 39%;
+  }
+  
+  .page-right-top {
+    left: calc(52% - 1cm);
+    width: 39%;
+  }
+
+  .page-right-bottom {
+    left: calc(52% - 1cm);
+    width: 39%;
+  }
+
+  .contact-links-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px), (max-width: 1024px) and (orientation: portrait) {
+  /* Tampilkan Tombol Melayang Arcane di Mobile */
+  .mobile-page-fab {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    right: 18px;
+    bottom: 22px;
+    z-index: 999;
+    background: linear-gradient(135deg, rgba(32, 18, 10, 0.95), rgba(16, 9, 5, 0.98));
+    border: 1.5px solid var(--gold-primary);
+    border-radius: 50px;
+    padding: 10px 18px;
+    color: #fff6db;
+    font-family: var(--font-magic);
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 
+      0 6px 22px rgba(0, 0, 0, 0.75),
+      0 0 16px rgba(229, 193, 88, 0.45);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    user-select: none;
+    touch-action: manipulation;
+    animation: fabEntrance 0.5s ease-out;
+  }
+
+  .mobile-page-fab:active {
+    transform: scale(0.94) translateY(2px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.8), 0 0 10px rgba(229, 193, 88, 0.3);
+  }
+
+  .fab-icon-wrap {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(229, 193, 88, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--gold-light);
+    box-shadow: inset 0 0 6px rgba(229, 193, 88, 0.4);
+    flex-shrink: 0;
+  }
+
+  .fab-arrow {
+    font-size: 0.78rem;
+    color: var(--gold-primary);
+    transition: transform 0.25s ease;
+  }
+
+  .mobile-page-fab:hover .fab-arrow {
+    transform: translateX(3px);
+  }
+
+  @keyframes fabEntrance {
+    0% { opacity: 0; transform: translateY(20px) scale(0.85); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Stage & Wrapper Layout di Mobile Portrait */
+  .open-book-stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .open-book-wrapper {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    transform: none;
+    aspect-ratio: auto;
+    background: #111a13;
+  }
+
+  .open-book-img {
+    display: none !important;
+  }
+
+  /* Single Page Mobile Backgrounds (Anime Grimoire Halaman Kiri & Kanan) */
+  .mobile-page-bg {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.38s ease, transform 0.38s ease;
+  }
+
+  [data-mobile-page="left"] .mobile-bg-left {
+    opacity: 1;
+    transform: scale(1);
+    visibility: visible;
+  }
+  [data-mobile-page="left"] .mobile-bg-right {
+    opacity: 0;
+    transform: scale(1.02);
+    visibility: hidden;
+  }
+
+  [data-mobile-page="right"] .mobile-bg-left {
+    opacity: 0;
+    transform: scale(1.02);
+    visibility: hidden;
+  }
+  [data-mobile-page="right"] .mobile-bg-right {
+    opacity: 1;
+    transform: scale(1);
+    visibility: visible;
+  }
+
+  /* ================= PENGATURAN HALAMAN KIRI VS KANAN DI MOBILE ================= */
+
+  /* Base panel styling di mobile: Transparan halus agar bayangan daun & tekstur kertas buku terlihat */
+  .book-panel {
+    border-radius: 0;
+    border: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    z-index: 5;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  /* 1. KETIKA DATA-MOBILE-PAGE = "LEFT" (DEFAULT SAAT MASUK HP: Lembaran Kiri Aktif Penuh) */
+  [data-mobile-page="left"] .page-left {
+    display: flex !important;
+    position: absolute;
+    left: calc(9% + 2px);
+    right: 8px;
+    top: 10px;
+    bottom: 10px;
+    width: auto;
+    height: auto;
+    padding: 10px 12px;
+    opacity: 1;
+    transform: translateX(0);
+    animation: mobileSlideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-mobile-page="left"] .page-right-top,
+  [data-mobile-page="left"] .page-right-bottom {
+    display: none !important;
+  }
+
+  /* 2. KETIKA DATA-MOBILE-PAGE = "RIGHT" (Lembaran Kanan Aktif: Konsol + Tutup Buku & Status) */
+  [data-mobile-page="right"] .page-left {
+    display: none !important;
+  }
+
+  [data-mobile-page="right"] .page-right-top {
+    display: flex !important;
+    position: absolute;
+    left: 12px;
+    right: 24px;
+    top: 10px;
+    width: auto;
+    height: calc(49vh - 10px);
+    padding: 8px 10px;
+    opacity: 1;
+    transform: translateX(0);
+    animation: mobileSlideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-mobile-page="right"] .page-right-bottom {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    position: absolute;
+    left: 12px;
+    right: 24px;
+    top: calc(49vh + 6px);
+    bottom: 10px;
+    width: auto;
+    height: auto;
+    padding: 7px 8px 75px 8px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    opacity: 1;
+    transform: translateX(0);
+    animation: mobileSlideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Custom Scrollbar for mobile right bottom */
+  [data-mobile-page="right"] .page-right-bottom::-webkit-scrollbar {
+    width: 3px;
+  }
+  [data-mobile-page="right"] .page-right-bottom::-webkit-scrollbar-thumb {
+    background: rgba(160, 120, 75, 0.3);
+    border-radius: 3px;
+  }
+
+  [data-mobile-page="right"] .page-right-bottom .panel-v-divider {
+    display: none !important;
+  }
+
+  [data-mobile-page="right"] .system-status-widget {
+    width: 100% !important;
+    flex: none !important;
+    padding: 6px 7px !important;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  [data-mobile-page="right"] .tutup-buku-card {
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 5px 8px !important;
+    gap: 8px !important;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  [data-mobile-page="right"] .tutup-buku-tag {
+    display: none !important;
+  }
+
+  /* Jam Digital: Tanggal di bawah Jam Digital sesuai permintaan */
+  [data-mobile-page="right"] .big-clock-box {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 1px !important;
+    padding: 3px 8px !important;
+    width: auto !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  [data-mobile-page="right"] .big-clock-time-wrap {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  [data-mobile-page="right"] .big-clock-time {
+    font-size: 0.90rem !important;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+
+  [data-mobile-page="right"] .big-clock-icon {
+    font-size: 0.70rem !important;
+  }
+
+  [data-mobile-page="right"] .big-clock-date {
+    font-size: 0.52rem !important;
+    margin-top: 1px !important;
+    color: #8c6114 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: center !important;
+    line-height: 1.1;
+  }
+
+  /* Tombol Tutup Buku: Digeser ke dalam agar tidak keluar UI */
+  [data-mobile-page="right"] .btn-close-book-x {
+    width: auto !important;
+    padding: 6px 12px !important;
+    height: auto !important;
+    flex-shrink: 0 !important;
+    border-radius: 7px !important;
+    flex-direction: row !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+    margin-right: 1px !important;
+  }
+
+  [data-mobile-page="right"] .close-x-circle {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0.65rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  [data-mobile-page="right"] .close-x-text {
+    font-size: 0.64rem !important;
+    white-space: nowrap !important;
+    letter-spacing: 0.04em;
+  }
+
+  @keyframes mobileSlideLeft {
+    0% { opacity: 0; transform: translateX(-16px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes mobileSlideRight {
+    0% { opacity: 0; transform: translateX(16px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Padding ekstra pada lembaran kiri agar kartu paling bawah tidak tertutup tombol melayang */
+  .page-scroll-content {
+    padding-bottom: 95px !important;
+  }
+}

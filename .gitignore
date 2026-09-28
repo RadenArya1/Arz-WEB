@@ -1,0 +1,38 @@
+# =============================================================
+# ARZ-WEB ECOSYSTEM - GITIGNORE CONFIGURATION
+# =============================================================
+
+# TestSprite Exclusive Localhost Test Framework (Zero-Leak Policy)
+testsprite_tests/
+testsprite_vault.json
+rotate-testsprite.ps1
+testsprite-runner.js
+mcp_config.json
+.agents/
+
+# Dependencies & Scratch Artifacts
+node_modules/
+scratch/
+package-lock.json
+
+# Local Runtime Buffers, Credentials & Logs
+logs_buffer.json
+*.log
+*.env
+*.env.*
+ethol-notifier/ethol-config.json
+ethol-notifier/logs_buffer.json
+ethol-notifier/device_state.json
+ethol-notifier/node_health.json
+
+# Ephemeral Scraper Screenshots (Keep only sample for portfolio)
+ethol-notifier/**/screenshots/presensi_*.jpg
+!ethol-notifier/**/screenshots/presensi_sample.jpg
+!ethol-notifier/screenshots/presensi_sample.jpg
+ethol-notifier/ethol-notifier/
+
+# OS & Editor Metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp

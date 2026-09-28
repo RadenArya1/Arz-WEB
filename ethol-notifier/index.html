@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ethol Academic Notifier • Grimoire Ecosystem</title>
+  <meta name="description" content="Dashboard automasi presensi Ethol PENS — Grimoire Ecosystem" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- PWA Manifest & Mobile Web App Capability -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ethol Agent" />
+  <link rel="apple-touch-icon" href="../src/sampul/book_cover.png" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="ethol.css?v=20260917_auto_screenshot" />
+</head>
+<body class="ethol-body">
+
+  <!-- Partikel Latar -->
+  <canvas id="etholParticles"></canvas>
+  <!-- Ambient Glow -->
+  <div class="ambient-glow"></div>
+
+  <!-- ════════════════════════════════════════════════
+       TOPBAR
+  ════════════════════════════════════════════════ -->
+  <header class="app-topbar">
+    <div class="brand-group">
+      <div class="brand-icon-wrap">
+        <div class="brand-icon-ring"></div>
+        <div class="brand-icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+      </div>
+      <div class="brand-text">
+        <h1>Ethol Academic Notifier</h1>
+        <div class="brand-subtitle">
+          <span class="brand-eco">Grimoire Ecosystem</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="clock-pill">
+        <i class="fa-regular fa-clock"></i>
+        <span id="topbarClock">00:00:00</span>
+      </div>
+      <a href="../index.html" class="btn-back-grimoire">
+        <i class="fa-solid fa-book-open"></i>
+        <span>Grimoire</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════
+       KPI CARDS
+  ════════════════════════════════════════════════ -->
+  <section class="kpi-grid" aria-label="Status Sistem">
+
+    <!-- Card 1: Status Agent -->
+    <div class="stat-card stat-card--agent" id="cardAgentStatus">
+      <div class="stat-card-shimmer"></div>
+      <div class="stat-card-header">
+        <span class="stat-label">Status Agent</span>
+        <div class="stat-icon icon-agent" id="statIconAgent">
+          <i class="fa-solid fa-robot" id="statIconAgentI"></i>
+        </div>
+      </div>
+      <div class="stat-value" id="kpiAgentStatus">IDLE</div>
+      <div class="stat-footer">
+        <span class="trend-pill pill-idle" id="kpiAgentBadge">
+          <i class="fa-solid fa-circle-pause"></i> Menunggu
+        </span>
+        <span class="stat-sub">Auto Absen Engine</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Terakhir Berjalan -->
+    <div class="stat-card">
+      <div class="stat-card-shimmer"></div>
+      <div class="stat-card-header">
+        <span class="stat-label">Terakhir Berjalan</span>
+        <div class="stat-icon icon-time">
+          <i class="fa-regular fa-clock"></i>
+        </div>
+      </div>
+      <div class="stat-value stat-value--sm" id="kpiLastRun">—</div>
+      <div class="stat-footer">
+        <span class="trend-pill pill-info"><i class="fa-solid fa-history"></i> Riwayat</span>
+        <span class="stat-sub" id="kpiLastResult">Belum pernah dijalankan</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Akun SSO -->
+    <div class="stat-card stat-card--sso" id="cardSsoAccount">
+      <div class="stat-card-shimmer"></div>
+      <div class="stat-card-header">
+        <span class="stat-label">Akun SSO</span>
+        <div class="stat-icon icon-user">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+      </div>
+      <div class="stat-value stat-value--mono stat-value--sm">radenarya</div>
+      <div class="stat-footer">
+        <span class="trend-pill pill-success"><i class="fa-solid fa-shield-halved"></i> Terverifikasi</span>
+        <span class="stat-sub">@iet.student.pens.ac.id</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ════════════════════════════════════════════════
+       MAIN WORKSPACE GRID
+  ════════════════════════════════════════════════ -->
+  <main class="workspace-grid">
+
+    <!-- ══════════════════════════════════════
+         PANEL KIRI: KONTROL & PENGATURAN
+    ══════════════════════════════════════ -->
+    <aside class="panel control-panel">
+
+      <!-- Header -->
+      <div class="panel-head">
+        <div class="panel-head-left">
+          <i class="fa-solid fa-sliders panel-head-icon"></i>
+          <h2 class="panel-title">Kontrol Agent</h2>
+        </div>
+        <div class="server-status-pill" id="serverPill">
+          <span class="s-dot" id="serverDot"></span>
+          <span id="serverLabel">Memeriksa...</span>
+        </div>
+      </div>
+
+      <!-- ── Aksi Utama ── -->
+      <div class="control-section">
+        <button id="btnRunNow" class="btn-primary-run" onclick="runAbsen()" aria-label="Jalankan Auto Absen">
+          <span class="btn-shimmer-layer"></span>
+          <span class="btn-inner-content">
+            <i class="fa-solid fa-play btn-icon-left"></i>
+            <span class="btn-label">Jalankan Sekarang</span>
+            <span class="btn-shortcut">⌃R</span>
+          </span>
+        </button>
+
+        <!-- Tombol Loop Otomatis (3 - 5 menit acak) -->
+        <button id="btnToggleLoop" class="btn-loop-mode" onclick="toggleLoopMode()" aria-label="Aktifkan Loop Otomatis">
+          <span class="btn-inner-content">
+            <i class="fa-solid fa-arrows-rotate btn-icon-left" id="loopIcon"></i>
+            <span class="btn-label" id="loopBtnLabel">Mulai Loop Otomatis</span>
+          </span>
+        </button>
+
+        <!-- Tombol Uji Tangkapan Layar Presensi -->
+        <button id="btnTestScreenshot" class="btn-test-presensi" onclick="testPresensiStream()" aria-label="Uji Screenshot Presensi">
+          <span class="btn-inner-content">
+            <i class="fa-solid fa-camera btn-icon-left"></i>
+            <span class="btn-label">Uji Tangkapan Layar Presensi</span>
+          </span>
+        </button>
+
+        <!-- Status & Countdown Saat Loop Berjalan -->
+        <div id="loopCountdownBox" class="loop-countdown-box" style="display: none;">
+          <div class="countdown-pulse-dot"></div>
+          <div class="countdown-info">
+            <span class="countdown-title">Loop Otomatis Aktif</span>
+            <span class="countdown-timer" id="loopCountdownText">Jadwal berikutnya: Menghitung...</span>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="panel-divider"></div>
+
+      <!-- ── Info Akun ── -->
+      <div class="control-section">
+        <div class="section-heading">
+          <i class="fa-solid fa-user-graduate"></i>
+          Informasi Akun
+        </div>
+
+        <div class="info-card">
+          <div class="info-avatar">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="info-details">
+            <div class="info-name">Raden Davino Arya</div>
+            <div class="info-role">
+              <span class="role-pill"><i class="fa-solid fa-id-badge"></i> Mahasiswa</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row-list">
+          <div class="info-row">
+            <span class="info-key"><i class="fa-solid fa-at"></i> Username</span>
+            <span class="info-val">radenarya@iet.student.pens.ac.id</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key"><i class="fa-solid fa-lock"></i> Auth</span>
+            <span class="info-val">CAS SSO PENS</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key"><i class="fa-solid fa-server"></i> Target</span>
+            <span class="info-val">ethol.pens.ac.id</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <!-- ── Pengingat Tugas (Deadline ≤ 5 Hari & Belum Selesai) ── -->
+      <div class="control-section" id="sectionTugas">
+        <div class="section-heading" style="display: flex; justify-content: space-between; align-items: center;">
+          <span><i class="fa-solid fa-list-check"></i> Pengingat Tugas</span>
+          <span class="trend-pill pill-warning" id="taskCountBadge">Memuat...</span>
+        </div>
+        <p class="task-section-sub">Tugas kuliah belum selesai dengan deadline ≤ 5 hari ke depan.</p>
+        <div id="taskListContainer" class="task-list-container">
+          <div class="task-empty-box">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <span>Memeriksa daftar tugas...</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ══════════════════════════════════════
+         PANEL KANAN: KONSOL OUTPUT
+    ══════════════════════════════════════ -->
+    <section class="panel console-panel">
+
+      <!-- Header Konsol -->
+      <div class="panel-head console-head">
+        <div class="panel-head-left">
+          <i class="fa-solid fa-terminal panel-head-icon"></i>
+          <h2 class="panel-title">Konsol Output</h2>
+          <div class="live-badge" id="liveBadge">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
+          </div>
+        </div>
+        <div class="console-head-actions">
+          <button class="ico-btn" onclick="clearConsole()" title="Bersihkan log">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Feed Presensi -->
+      <div class="console-filter-bar">
+        <div class="filter-tabs">
+          <span class="feed-active-badge">
+            <i class="fa-solid fa-circle-check"></i> Feed Presensi Berhasil Server
+          </span>
+        </div>
+        <div class="log-counter">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span id="logCountDisplay">0</span> Presensi
+        </div>
+      </div>
+
+      <!-- Log Output Area -->
+      <div class="console-screen" id="consoleScreen">
+
+        <!-- Welcome Screen -->
+        <div class="console-welcome" id="consoleWelcome">
+          <div class="welcome-glow-ring">
+            <div class="welcome-icon-wrap">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+          </div>
+          <div class="welcome-content">
+            <h3 class="welcome-title">Konsol Presensi Ethol</h3>
+            <p class="welcome-desc">
+              Monitoring presensi otomatis ETHOL PENS di server.<br/>
+              Hanya presensi yang berhasil diverifikasi akan dikirim ke konsol output ini.
+            </p>
+            <div class="welcome-prereq">
+              <i class="fa-solid fa-circle-check"></i>
+              Status Server:&nbsp;
+              <code>Presensi Listener Aktif</code>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.console-screen -->
+
+    </section>
+
+  </main>
+
+  <!-- ════════════════════════════════════════════════
+       TOAST NOTIFIKASI
+  ════════════════════════════════════════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL QR HUBUNGKAN HP
+  ══════════════════════════════════════════════════════════ -->
+  <div class="qr-modal-backdrop" id="qrModalBackdrop" style="display:none;">
+    <div class="qr-modal-card">
+      <div class="qr-modal-head">
+        <div class="qr-modal-title">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <h3>Hubungkan HP ke Ethol Notifier</h3>
+        </div>
+        <button class="qr-modal-close" id="btnCloseQrModal" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="qr-modal-body">
+        <div class="qr-image-wrap">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;data=https%3A%2F%2Fdashboard.raidenarya.my.id%2Fethol-notifier%2F&amp;color=0a0818&amp;bgcolor=ffffff&amp;qzone=1" alt="QR Code Ethol Notifier" class="qr-code-img" />
+          <div class="qr-scan-badge">Scan dengan Kamera HP</div>
+        </div>
+        <div class="qr-instructions">
+          <p><strong>Arahkan kamera smartphone Anda ke QR code di atas</strong> untuk membuka kontrol langsung di HP.</p>
+          <div class="qr-url-box">
+            <span id="txtShareUrl">https://dashboard.raidenarya.my.id/ethol-notifier/</span>
+            <button id="btnCopyEtholUrl" class="btn-copy-url" title="Salin URL"><i class="fa-regular fa-copy"></i></button>
+          </div>
+          <div class="qr-features-list">
+            <div class="qr-feat-item"><i class="fa-solid fa-bolt"></i> Remote Control Jalankan Sekarang &amp; Loop 24/7</div>
+            <div class="qr-feat-item"><i class="fa-solid fa-bell"></i> Notifikasi Sistem &amp; Getar saat Presensi Sukses</div>
+            <div class="qr-feat-item"><i class="fa-solid fa-download"></i> PWA Siap Install Mandiri di Layar Utama HP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL LIGHTBOX BUKTI SCREENSHOT PRESENSI
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screenshot-modal-backdrop" id="screenshotModal" style="display: none;" onclick="closeScreenshotModal(event)">
+    <div class="screenshot-modal-dialog" onclick="event.stopPropagation()">
+      <div class="screenshot-modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-camera-retro modal-icon"></i>
+          <div>
+            <h3 id="modalSsTitle">Bukti Layar Presensi Kuliah</h3>
+            <span id="modalSsSubtitle" class="modal-subtext">-</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeScreenshotModal()" title="Tutup Pratinjau">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="screenshot-modal-body">
+        <img id="modalSsImage" src="" alt="Bukti Presensi Ethol" />
+      </div>
+      <div class="screenshot-modal-footer">
+        <span class="modal-footer-badge"><i class="fa-solid fa-shield-halved"></i> Terverifikasi Berhasil di Server</span>
+        <span class="modal-footer-expiry"><i class="fa-regular fa-clock"></i> Disimpan sementara 24 jam</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="ethol.js?v=20260917_dedup_v4"></script>
+</body>
+</html>

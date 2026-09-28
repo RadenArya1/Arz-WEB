@@ -1,0 +1,25 @@
+{
+  "name": "Ethol Academic Notifier",
+  "short_name": "Ethol Agent",
+  "description": "Auto Presensi Kuliah & Pengingat Tugas Mahasiswa PENS Terintegrasi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0818",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "../src/sampul/book_cover.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../src/sampul/book_cover.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

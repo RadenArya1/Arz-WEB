@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arcanum Finance • Smart Money Tracker & Receipt Parser</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=MedievalSharp&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Chart.js CDN for Visual Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Tesseract.js CDN for Automatic Client-Side Receipt OCR (Image-to-Text) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Feature Stylesheet -->
+  <link rel="stylesheet" href="src/keuangan/keuangan.css?v=20260916_merchant_fix" />
+</head>
+<body class="keuangan-body">
+  <!-- Canvas Partikel Sihir Latar Belakang -->
+  <canvas id="magicParticles"></canvas>
+
+  <!-- ================= TOPBAR NAVIGATION ================= -->
+  <header class="app-topbar">
+    <div class="brand-group">
+      <div class="brand-icon-shield">
+        <i class="fa-solid fa-coins"></i>
+      </div>
+      <div class="brand-text">
+        <h1>Arcanum Finance</h1>
+        <div class="brand-subtitle">
+          <span class="status-live-dot"></span>
+          <span>Smart Receipt Parser &amp; Expense Analytics • Grimoire Ecosystem</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="topbar-clock-box">
+        <i class="fa-regular fa-clock"></i>
+        <span id="topbarClock">00:00:00</span>
+      </div>
+
+      <a href="index.html" class="btn-back-grimoire" title="Kembali ke Buku Grimoire Utama">
+        <i class="fa-solid fa-book-open"></i>
+        <span>Kembali ke Grimoire</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Toast Notifikasi Pergantian Bulan Otomatis -->
+  <div id="rolloverToast" class="rollover-toast" style="display: none;">
+    <div class="toast-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+    <div class="toast-content">
+      <strong id="toastTitle">Pergantian Bulan Otomatis Terdeteksi!</strong>
+      <p id="toastMessage">Bulan lalu telah diarsipkan aman ke History. Bulan baru telah aktif.</p>
+    </div>
+    <button type="button" id="btnCloseToast" class="btn-close-toast" title="Tutup">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- ================= MAIN DASHBOARD CONTAINER ================= -->
+  <main class="app-container">
+    <!-- 1. KPI SUMMARY STATS (BERDASARKAN BULAN TERPILIH) -->
+    <section class="kpi-section-grid" aria-label="Ringkasan Statistik Keuangan">
+      <!-- Card 1: Pemasukan Bulan Ini -->
+      <div class="stat-card stat-card-income">
+        <div class="stat-card-header">
+          <span id="kpiIncomeLabel">Pemasukan Bulan Ini</span>
+          <div class="stat-card-icon icon-income"><i class="fa-solid fa-arrow-down-long"></i></div>
+        </div>
+        <div class="stat-card-value text-income" id="kpiTotalIncome">+ Rp 0</div>
+        <div class="stat-card-footer">
+          <span class="trend-badge positive"><i class="fa-solid fa-circle-arrow-down"></i> Uang Masuk</span>
+          <span id="kpiIncomePeriod">Bulan September 2026</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Pengeluaran Bulan Ini -->
+      <div class="stat-card stat-card-expense">
+        <div class="stat-card-header">
+          <span id="kpiExpenseLabel">Pengeluaran Bulan Ini</span>
+          <div class="stat-card-icon icon-expense"><i class="fa-solid fa-arrow-up-long"></i></div>
+        </div>
+        <div class="stat-card-value text-expense" id="kpiTotalExpense">- Rp 0</div>
+        <div class="stat-card-footer">
+          <span class="trend-badge warning"><i class="fa-solid fa-circle-arrow-up"></i> Uang Keluar</span>
+          <span id="kpiExpensePeriod">Bulan September 2026</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Saldo Bersih (Net Cashflow) -->
+      <div class="stat-card stat-card-net">
+        <div class="stat-card-header">
+          <span>Saldo Bersih (Cashflow)</span>
+          <div class="stat-card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+        </div>
+        <div class="stat-card-value" id="kpiNetCashflow">Rp 0</div>
+        <div class="stat-card-footer">
+          <span class="trend-badge positive" id="kpiNetBadge"><i class="fa-solid fa-shield-halved"></i> Surplus</span>
+          <span id="kpiNetPeriod">Pemasukan - Pengeluaran</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Total Transaksi -->
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <span>Total Transaksi</span>
+          <div class="stat-card-icon"><i class="fa-solid fa-receipt"></i></div>
+        </div>
+        <div class="stat-card-value" id="kpiTxCount">0</div>
+        <div class="stat-card-footer">
+          <span class="trend-badge positive"><i class="fa-solid fa-circle-check"></i> Terverifikasi</span>
+          <span id="kpiTxPeriod">Inflow &amp; Outflow</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. WORKSPACE GRID (CHARTS & SMART RECEIPT PARSER) -->
+    <section class="workspace-grid">
+      <!-- Panel Kiri: Visualisasi Tren Pengeluaran Keuangan & Perbandingan Dua Kotak -->
+      <div class="charts-stack-card">
+        <div class="section-head chart-clean-head">
+          <h2><i class="fa-solid fa-chart-simple" style="color: var(--border-gold-glow);"></i> Perbandingan Arus Kas Multi-Bulan</h2>
+        </div>
+
+        <!-- DUAL BOX GRID: KOTAK KIRI (FOKUS) & KOTAK KANAN ('b' BULAN AKTIF) -->
+        <div class="dual-month-grid">
+          <!-- KOTAK PUTIH KIRI: BULAN FOKUS (DENGAN PANAH < > & DAFTAR DOWN HISTORY) -->
+          <div class="month-box month-box-focus">
+            <div class="month-box-header">
+              <button type="button" class="btn-box-arrow" id="btnFocusPrev" title="Bulan Sebelumnya">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              
+              <div class="history-dropdown-wrap">
+                <select id="focusMonthDropdown" class="history-select-dropdown" title="Daftar Down History Bulan">
+                  <!-- Diisi secara dinamis oleh JS: Pilihan Bulan History & Aktif -->
+                </select>
+              </div>
+
+              <button type="button" class="btn-box-arrow" id="btnFocusNext" title="Bulan Berikutnya">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+
+            <div class="month-box-canvas-wrap">
+              <canvas id="chartFocusedMonth"></canvas>
+            </div>
+
+            <div class="month-box-footer" id="focusBoxFooter">
+              <span class="box-stat-pill" id="focusStatPill">Surplus</span>
+            </div>
+          </div>
+
+          <!-- KOTAK PUTIH KANAN: BULAN BERJALAN ('b' / AKTIF) -->
+          <div class="month-box month-box-active">
+            <div class="month-box-header header-active-month">
+              <div class="active-month-label-wrap">
+                <span class="status-pulse-dot"></span>
+                <span id="activeBoxTitle">September 2026</span>
+                <span class="active-subtag">(Bulan Ini)</span>
+              </div>
+            </div>
+
+            <div class="month-box-canvas-wrap">
+              <canvas id="chartActiveMonth"></canvas>
+            </div>
+
+            <div class="month-box-footer" id="activeBoxFooter">
+              <span class="box-stat-pill" id="activeStatPill">Surplus</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Kanan: Smart Receipt Parser & Input Zone -->
+      <div class="parser-workspace-card">
+        <div class="section-head">
+          <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--border-gold-glow);"></i> Smart Receipt &amp; Transfer Parser</h2>
+          <span class="trend-badge positive"><i class="fa-solid fa-bolt"></i> Auto-Detect Inflow/Outflow</span>
+        </div>
+
+        <!-- AI Receipt Image Drop & Paste Zone (Seperti Input AI Chat) -->
+        <div class="image-upload-dropzone" id="receiptDropzone" tabindex="0">
+          <input type="file" id="receiptFileInput" accept="image/*" style="display: none;" />
+          
+          <div class="dropzone-inner" id="dropzoneNormalState">
+            <div class="dropzone-icon-circle">
+              <i class="fa-solid fa-camera-retro"></i>
+            </div>
+            <div class="dropzone-text-group">
+              <p class="dropzone-main-text">
+                <span class="highlight-action"><i class="fa-solid fa-paste"></i> Tempel Bukti Transfer / Struk (Ctrl + V)</span>
+              </p>
+              <span class="dropzone-sub-text">
+                Mendukung struk pembayaran QR / m-Transfer &amp; notifikasi transfer masuk BCA. AI mendeteksi otomatis!
+              </span>
+              <div class="dropzone-actions-row">
+                <button type="button" class="btn-paste-clipboard" id="btnPasteClipboard" title="Tempel gambar dari clipboard komputer/HP">
+                  <i class="fa-solid fa-paste"></i> Tempel dari Clipboard (Ctrl + V)
+                </button>
+                <button type="button" class="btn-browse-file" id="btnBrowseFile" title="Pilih berkas gambar struk dari komputer">
+                  <i class="fa-solid fa-folder-open"></i> Pilih Berkas Foto
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- OCR Live Scanning & Progress State -->
+          <div class="ocr-progress-box" id="ocrProgressWrap" style="display: none;">
+            <div class="ocr-scan-header">
+              <div class="ocr-spin-icon">
+                <i class="fa-solid fa-wand-magic-sparkles fa-spin"></i>
+              </div>
+              <div class="ocr-scan-details">
+                <div class="ocr-status-title" id="ocrStatusText">Menganalisis &amp; Membaca Teks Gambar Struk...</div>
+                <div class="ocr-status-sub" id="ocrStatusSub">AI OCR mendeteksi nominal uang, tanggal, dan pihak secara instan</div>
+              </div>
+              <span class="ocr-percent-badge" id="ocrPercentBadge">0%</span>
+            </div>
+            <div class="ocr-track">
+              <div class="ocr-fill" id="ocrProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hasil Parsing / Review Card -->
+        <div class="parsed-review-card" id="parsedReviewCard" style="display: none;">
+          <div class="review-card-top">
+            <!-- Sakelar Toggle Pemasukan / Pengeluaran -->
+            <div class="cashflow-type-switcher">
+              <button type="button" class="btn-type-toggle" data-type="pemasukan" id="btnToggleIncome">
+                <i class="fa-solid fa-arrow-down-long"></i> Pemasukan (+)
+              </button>
+              <button type="button" class="btn-type-toggle active" data-type="pengeluaran" id="btnToggleExpense">
+                <i class="fa-solid fa-arrow-up-long"></i> Pengeluaran (-)
+              </button>
+            </div>
+            <span class="review-amount-text" id="reviewTotalVal">Rp 0</span>
+          </div>
+
+          <div class="review-card-meta">
+            <div class="meta-item">
+              <span class="meta-item-label" id="reviewPartyLabel">Pihak / Keterangan <i class="fa-solid fa-pen" style="font-size: 0.6rem; opacity: 0.5;" title="Dapat diedit langsung"></i></span>
+              <span class="meta-item-value editable-field" id="reviewMerchantVal" contenteditable="true" spellcheck="false" title="Ketuk untuk mengedit keterangan">-</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-item-label">Waktu Transaksi <i class="fa-solid fa-pen" style="font-size: 0.6rem; opacity: 0.5;" title="Dapat diedit langsung"></i></span>
+              <span class="meta-item-value editable-field" id="reviewDateVal" contenteditable="true" spellcheck="false" title="Ketuk untuk mengedit tanggal/waktu">-</span>
+            </div>
+          </div>
+
+          <!-- Pratinjau Foto Bukti Pembayaran -->
+          <div class="review-image-attachment" id="reviewImagePreview" style="display: none;">
+            <div class="review-image-wrap">
+              <img id="reviewImageThumb" src="" alt="Foto Struk" />
+              <button type="button" class="btn-remove-thumb" id="btnRemoveThumb" title="Hapus Lampiran Foto">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <span class="review-image-label"><i class="fa-solid fa-paperclip"></i> Foto bukti transaksi siap disimpan</span>
+          </div>
+
+          <div class="review-card-actions">
+            <button type="button" id="btnClearParsedTx" class="btn-discard-tx">Batal</button>
+            <button type="button" id="btnSaveParsedTx" class="btn-save-confirmed">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan ke Riwayat
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. TRANSACTION HISTORY TABLE -->
+    <section class="table-section-card">
+      <div class="table-toolbar-row">
+        <div class="section-head" style="border-bottom: none; padding-bottom: 0;">
+          <h2><i class="fa-solid fa-clock-rotate-left" style="color: var(--border-gold-glow);"></i> Riwayat Arus Keuangan</h2>
+        </div>
+
+        <!-- Filter Tab Arus Kas -->
+        <div class="cashflow-filter-tabs">
+          <button type="button" class="filter-tab-btn active" data-filter="all">Semua</button>
+          <button type="button" class="filter-tab-btn income-tab" data-filter="pemasukan">
+            <i class="fa-solid fa-arrow-down-long"></i> Pemasukan
+          </button>
+          <button type="button" class="filter-tab-btn expense-tab" data-filter="pengeluaran">
+            <i class="fa-solid fa-arrow-up-long"></i> Pengeluaran
+          </button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <!-- Pilihan Lingkup Periode Tabel -->
+          <div class="period-scope-wrap">
+            <select id="txPeriodScope" class="period-scope-select" title="Pilih cakupan transaksi yang ditampilkan">
+              <option value="selected">Hanya Bulan Ini (Fokus)</option>
+              <option value="all">Semua Bulan (Termasuk History)</option>
+            </select>
+          </div>
+
+          <div class="search-box-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="txSearchInput" placeholder="Cari pihak, nominal, tanggal..." />
+          </div>
+          <span class="table-stats-count" id="tableStatsCount">Menampilkan 0 transaksi</span>
+        </div>
+      </div>
+
+      <!-- Banner Penanda Jika Sedang Melihat Arsip History Bulan Lalu -->
+      <div id="historyBanner" class="history-banner" style="display: none;">
+        <div class="history-banner-content">
+          <i class="fa-solid fa-box-archive"></i>
+          <span>Anda sedang melihat arsip transaksi: <strong id="historyBannerMonthName">Agustus 2026</strong>. Bulan ini telah berlalu dan tersimpan permanen di riwayat.</span>
+        </div>
+        <button type="button" class="btn-history-back-active" id="btnBackToActiveFromBanner">
+          <i class="fa-solid fa-bolt"></i> Kembali ke Bulan Aktif
+        </button>
+      </div>
+
+      <div class="table-scroll-container">
+        <table class="full-tx-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Waktu</th>
+              <th>Pihak / Keterangan Transaksi</th>
+              <th style="width: 140px;">Jenis Transaksi</th>
+              <th style="width: 90px; text-align: center;">Bukti</th>
+              <th style="text-align: right; width: 160px;">Nominal (Arus Kas)</th>
+              <th style="text-align: center; width: 70px;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="txTableBody">
+            <!-- Diisi secara dinamis oleh src/keuangan/keuangan.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= MODAL PERBANDINGAN MULTI-BULAN ================= -->
+  <div class="image-modal-backdrop" id="multiMonthModal" style="display: none;">
+    <div class="image-modal-dialog multi-month-modal-dialog">
+      <div class="image-modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-layer-group modal-gold-icon"></i>
+          <div>
+            <h3>Perbandingan Arus Kas Multi-Bulan</h3>
+            <span class="modal-subtext">Perbandingan menyeluruh bulan aktif &amp; seluruh riwayat bulan yang telah berlalu</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseMultiMonthModal" title="Tutup Modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="multi-month-modal-body">
+        <div class="comparison-summary-row" id="multiMonthSummaryCards">
+          <!-- Diisi secara dinamis oleh JS -->
+        </div>
+
+        <div class="table-scroll-container" style="max-height: 380px;">
+          <table class="full-tx-table comparison-table">
+            <thead>
+              <tr>
+                <th>Periode Bulan</th>
+                <th style="text-align: center;">Status Siklus</th>
+                <th style="text-align: right;">Pemasukan</th>
+                <th style="text-align: right;">Pengeluaran</th>
+                <th style="text-align: right;">Net Cashflow</th>
+                <th style="text-align: center;">Transaksi</th>
+                <th style="text-align: center;">Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="multiMonthTableBody">
+              <!-- Diisi secara dinamis oleh JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="image-modal-footer">
+        <div class="modal-footer-info">
+          <span class="modal-ref-tag"><i class="fa-solid fa-shield-halved"></i> Data Bulan Berlalu Tersimpan Utuh Tanpa Dihapus</span>
+        </div>
+        <button type="button" class="btn-discard-tx" id="btnCloseMultiMonthBtn">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL LIGHTBOX BUKTI TRANSAKSI ================= -->
+  <div class="image-modal-backdrop" id="imageModal" style="display: none;">
+    <div class="image-modal-dialog">
+      <div class="image-modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-receipt modal-gold-icon"></i>
+          <div>
+            <h3 id="modalTxTitle">Foto Bukti Pembayaran</h3>
+            <span id="modalTxSubtitle" class="modal-subtext">-</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseModal" title="Tutup Pratinjau">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="image-modal-body">
+        <img id="modalFullImage" src="" alt="Bukti Struk Pembayaran" />
+      </div>
+
+      <div class="image-modal-footer">
+        <div class="modal-footer-info">
+          <span id="modalTxRef" class="modal-ref-tag">-</span>
+        </div>
+        <div class="modal-footer-amount" id="modalTxAmount">Rp 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Audio & Particles -->
+  <script src="src/shared/audio.js?v=20260913_7"></script>
+  <script src="src/shared/particles.js?v=20260913_7"></script>
+
+  <!-- Feature Scripts -->
+  <script src="src/keuangan/parser.js?v=20260916_merchant_fix"></script>
+  <script src="src/keuangan/storage.js?v=20260913_11"></script>
+  <script src="src/keuangan/keuangan.js?v=20260916_merchant_fix"></script>
+</body>
+</html>

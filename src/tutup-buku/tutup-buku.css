@@ -1,0 +1,273 @@
+/* =========================================================
+   FITUR: TUTUP BUKU - GRIMOIRE ARZ
+   Styling untuk Sesi Grimoire, Jam Digital, dan Tombol Tutup Buku
+   ========================================================= */
+
+/* Wadah Panel Kanan Bawah */
+.page-right-bottom {
+  left: calc(52.2% - 1cm);
+  top: 67%;
+  width: 38.8%;
+  height: 26.5%;
+  padding: 8px 10px;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+/* Kartu Terpisah Tutup Buku (Sisi Kiri) */
+.tutup-buku-card {
+  width: 124px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 250, 240, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(160, 115, 60, 0.35);
+  border-radius: 9px;
+  padding: 6px 8px;
+  box-shadow: 
+    0 2px 10px rgba(45, 25, 10, 0.06),
+    inset 0 0 12px rgba(220, 190, 140, 0.15);
+  box-sizing: border-box;
+  transition: var(--transition-smooth);
+}
+
+.tutup-buku-card:hover {
+  background: rgba(255, 250, 240, 0.32);
+  border-color: rgba(160, 115, 60, 0.65);
+  box-shadow: 
+    0 4px 14px rgba(45, 25, 10, 0.1),
+    inset 0 0 16px rgba(220, 190, 140, 0.22);
+}
+
+/* Badge Header Kartu */
+.tutup-buku-tag {
+  font-family: var(--font-magic);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #7b4f23;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px dashed rgba(160, 115, 60, 0.35);
+  padding-bottom: 3px;
+  width: 100%;
+  justify-content: center;
+}
+
+.tutup-buku-tag i {
+  font-size: 0.6rem;
+  color: #a0733c;
+}
+
+/* Jam Digital Diperbesar */
+.big-clock-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(170, 125, 70, 0.3);
+  border-radius: 7px;
+  padding: 3px 6px;
+  box-shadow: 
+    0 1px 4px rgba(45, 25, 10, 0.04),
+    inset 0 0 8px rgba(220, 190, 140, 0.12);
+  user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: var(--transition-smooth);
+}
+
+.big-clock-box:hover {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(170, 125, 70, 0.55);
+  box-shadow: 0 2px 8px rgba(45, 25, 10, 0.08);
+}
+
+.big-clock-time-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.big-clock-icon {
+  color: #a0733c;
+  font-size: 0.78rem;
+}
+
+.big-clock-time {
+  font-family: var(--font-magic);
+  font-size: 1.18rem;
+  font-weight: 900;
+  color: #381d09;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+}
+
+.big-clock-date {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #7a542b;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Tombol Tutup Buku (Merah Darah / Kulit Kuno & Aksen Emas) */
+.btn-close-book-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #741e17 0%, #460f0c 50%, #290705 100%);
+  border: 1.5px solid var(--border-gold-bright);
+  color: var(--gold-light);
+  padding: 5px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  box-shadow: 
+    0 3px 10px rgba(0, 0, 0, 0.35),
+    0 0 10px rgba(229, 193, 88, 0.2);
+  transition: var(--transition-smooth);
+  user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-close-book-x:hover {
+  transform: translateY(-1px) scale(1.02);
+  border-color: #ffffff;
+  background: linear-gradient(135deg, #8f261d 0%, #5a1410 50%, #380a08 100%);
+  box-shadow: 
+    0 5px 16px rgba(0, 0, 0, 0.5),
+    0 0 16px rgba(255, 215, 0, 0.45);
+  color: #fff;
+}
+
+.btn-close-book-x:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.close-x-circle {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(245, 215, 127, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  color: #ffffff;
+  transition: var(--transition-smooth);
+}
+
+.btn-close-book-x:hover .close-x-circle {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: #ffffff;
+  transform: rotate(90deg);
+}
+
+.close-x-text {
+  font-family: var(--font-magic);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* Pemisah Ornamen Vertikal Antar Kartu */
+.panel-v-divider {
+  width: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.divider-line {
+  flex: 1;
+  width: 1.5px;
+  background: linear-gradient(to bottom, transparent, rgba(160, 115, 60, 0.45), transparent);
+}
+
+.divider-crest {
+  font-size: 0.72rem;
+  color: #a0733c;
+  line-height: 1;
+  margin: 3px 0;
+  text-shadow: 0 0 6px rgba(229, 193, 88, 0.4);
+}
+
+@media (max-width: 600px) {
+  .tutup-buku-card {
+    width: 104px;
+    padding: 5px 4px;
+    gap: 3px;
+  }
+
+  .tutup-buku-tag {
+    font-size: 0.56rem;
+    padding-bottom: 2px;
+  }
+
+  .big-clock-box {
+    padding: 3px 3px;
+    border-radius: 6px;
+  }
+
+  .big-clock-time-wrap {
+    gap: 3px;
+    justify-content: center;
+  }
+
+  .big-clock-icon {
+    font-size: 0.68rem;
+  }
+
+  .big-clock-time {
+    font-size: 0.88rem;
+    letter-spacing: 0.02em;
+  }
+
+  .big-clock-date {
+    font-size: 0.50rem;
+    letter-spacing: 0;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .btn-close-book-x {
+    padding: 3px 5px;
+    border-radius: 6px;
+  }
+
+  .close-x-circle {
+    width: 20px;
+    height: 20px;
+    font-size: 0.62rem;
+  }
+
+  .close-x-text {
+    font-size: 0.56rem;
+    letter-spacing: 0.05em;
+  }
+}
