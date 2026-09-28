@@ -102,7 +102,7 @@ Seluruh antarmuka ekosistem dirancang dengan prinsip ergonomi mobile yang ketat:
 ### Langkah Menjalankan
 1. **Clone repositori ini:**
    ```bash
-   git clone https://github.com/username/Arz-WEB.git
+   git clone https://github.com/RadenArya1/Arz-WEB.git
    cd Arz-WEB
    ```
 
@@ -131,5 +131,5 @@ Seluruh antarmuka ekosistem dirancang dengan prinsip ergonomi mobile yang ketat:
 
 Dikembangkan oleh **Raden** sebagai bagian dari portofolio rekayasa web *Full-Stack* & *Self-Hosted Systems Architecture*.
 
-[![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?style=flat-square&logo=github)](https://github.com)
+[![GitHub](https://img.shields.io/badge/GitHub-RadenArya1-181717?style=flat-square&logo=github)](https://github.com/RadenArya1)
 [![Web](https://img.shields.io/badge/Live-Demo-4f46e5?style=flat-square&logo=googlechrome&logoColor=white)](http://localhost:8080)
