@@ -1,12 +1,21 @@
 // Ethol Academic Notifier - Service Worker
-const CACHE_NAME = 'ethol-sw-v1';
+const CACHE_NAME = 'ethol-sw-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(
+      keys.map((k) => {
+        if (k !== CACHE_NAME) {
+          console.log('[SW] Menghapus cache usang:', k);
+          return caches.delete(k);
+        }
+      })
+    )).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {

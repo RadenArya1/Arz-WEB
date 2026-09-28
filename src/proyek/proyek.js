@@ -4,7 +4,7 @@
    ========================================================= */
 
 (function initProyekWeb() {
-  const STORAGE_KEY = 'grimoire_web_projects_v11';
+  const STORAGE_KEY = 'grimoire_web_projects_v12';
 
   const DEFAULT_PROJECTS = [
     {
@@ -102,14 +102,20 @@
           return p;
         });
 
+        // 1b. Bersihkan proyek uji coba lama yang sudah tidak ada di DEFAULT_PROJECTS
+        const validIds = new Set(DEFAULT_PROJECTS.map(d => d.id));
+        parsed = parsed.filter(p => validIds.has(p.id));
+
         // 2. Sinkronisasi Ikon Baku & Info Resmi dari DEFAULT_PROJECTS (Override ikon lama/duplikat di localStorage)
         DEFAULT_PROJECTS.forEach(def => {
           const idx = parsed.findIndex(p => p.id === def.id || (p.url && def.url && p.url !== '#' && p.url === def.url));
           if (idx !== -1) {
             parsed[idx].icon = def.icon; // Pastikan ikon resmi selalu diterapkan
             parsed[idx].title = def.title;
+            parsed[idx].desc = def.desc;
             parsed[idx].url = def.url;
             parsed[idx].target = def.target;
+            parsed[idx].tags = def.tags;
           } else {
             parsed.push(def);
           }
