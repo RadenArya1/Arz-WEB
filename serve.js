@@ -65,8 +65,7 @@ try {
   if (fs.existsSync(LOGS_BUFFER_PATH)) {
     const rawSaved = JSON.parse(fs.readFileSync(LOGS_BUFFER_PATH, 'utf8'));
     const now = Date.now();
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    const rawFiltered = Array.isArray(rawSaved) ? rawSaved.filter(l => l && l.ts && (now - l.ts < ONE_DAY_MS) && (now - l.ts >= 0)) : [];
+    const rawFiltered = Array.isArray(rawSaved) ? rawSaved.filter(l => l && l.ts && (now - l.ts < ONE_DAY_MS) && (now - l.ts >= 0) && isPresensiSuccess(l.text || l.raw)) : [];
     const seenSig = new Set();
     logLines = [];
     for (const item of rawFiltered) {
@@ -143,17 +142,17 @@ const sseClients = new Set();
 
 function isPresensiSuccess(line) {
   if (!line) return false;
-  const lower = line.toLowerCase();
-  // BUKAN login dan BUKAN logout
+  const clean = String(line).replace(/\x1b\[[0-9;]*m/g, '').trim();
+  const lower = clean.toLowerCase();
+  // Tolak keras log warning, error, info sistem, debug, login, logout, atau ketiadaan sesi
+  if (lower.includes('warn') || lower.includes('error') || lower.includes('info') || lower.includes('debug')) return false;
   if (lower.includes('login') || lower.includes('logout') || lower.includes('keluar')) return false;
-  // HANYA yang berhasil presensi atau tercatat hadir
-  return lower.includes('presensi') && (
-    lower.includes('berhasil') ||
-    lower.includes('sukses') ||
-    lower.includes('tercatat') ||
-    lower.includes('hadir') ||
-    lower.includes('dilakukan')
-  );
+  if (lower.includes('tidak ada') || lower.includes('belum ada') || lower.includes('gagal') || lower.includes('skip') || lower.includes('disabled') || lower.includes('tutup')) return false;
+  
+  // HANYA terima presensi yang benar-benar berhasil dikonfirmasi atau tercatat hadir
+  const hasPresensi = lower.includes('presensi') || lower.includes('kehadiran');
+  const hasSuccess = lower.includes('berhasil') || lower.includes('sukses') || lower.includes('tercatat hadir') || lower.includes('telah dilakukan') || clean.includes('✓');
+  return hasPresensi && hasSuccess;
 }
 
 function cleanupExpiredScreenshots(maxAgeMs = 24 * 60 * 60 * 1000) {

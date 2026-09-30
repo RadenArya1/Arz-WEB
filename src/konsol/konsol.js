@@ -5,8 +5,23 @@
    ========================================================= */
 
 (function initKonsolWeb() {
-  const STORAGE_KEY = 'grimoire_console_logs_ethol_sukses_v4'; // Khusus feed sukses presensi Ethol (v4 anti-duplikasi)
+  const STORAGE_KEY = 'grimoire_console_logs_ethol_sukses_v5'; // Khusus feed presensi berhasil murni Ethol (v5 anti-warn/error)
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+  function isPresensiSuccess(text) {
+    if (!text) return false;
+    const clean = String(text).replace(/\x1b\[[0-9;]*m/g, '').trim();
+    const lower = clean.toLowerCase();
+    // Tolak keras log warning, error, info sistem, debug, login, logout, atau ketiadaan sesi
+    if (lower.includes('warn') || lower.includes('error') || lower.includes('info') || lower.includes('debug')) return false;
+    if (lower.includes('login') || lower.includes('logout') || lower.includes('keluar')) return false;
+    if (lower.includes('tidak ada') || lower.includes('belum ada') || lower.includes('gagal') || lower.includes('skip') || lower.includes('disabled') || lower.includes('tutup')) return false;
+    
+    // HANYA terima presensi yang benar-benar berhasil dikonfirmasi atau tercatat hadir
+    const hasPresensi = lower.includes('presensi') || lower.includes('kehadiran');
+    const hasSuccess = lower.includes('berhasil') || lower.includes('sukses') || lower.includes('tercatat hadir') || lower.includes('telah dilakukan') || clean.includes('✓');
+    return hasPresensi && hasSuccess;
+  }
 
   function getPresensiCourseKey(text) {
     if (!text) return 'generic';
@@ -34,12 +49,6 @@
 
   const INITIAL_LOGS = [];
 
-  const MOCK_SIMULATION_EVENTS = [
-    { level: 'SUCCESS', tag: 'ETHOL-ABSEN', msg: '✔ [ETHOL] Presensi Mandiri Berhasil: Jadwal perkuliahan aktif terkonfirmasi hadir.' },
-    { level: 'SUCCESS', tag: 'ETHOL-ABSEN', msg: '✔ [ETHOL] Tombol hadir perkuliahan berhasil diklik dan tercatat di sistem akademik PENS.' },
-    { level: 'SUCCESS', tag: 'ETHOL-ABSEN', msg: '✔ [ETHOL] Mahasiswa radenarya@iet.student.pens.ac.id sukses presensi otomatis.' }
-  ];
-
   function getStoredLogs() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -47,17 +56,23 @@
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           const now = Date.now();
-          // Filter hanya log dalam rentang waktu 1 hari (24 jam)
+          // Filter hanya log presensi sukses murni dalam rentang waktu 1 hari (24 jam)
           const valid = parsed.filter(item => {
+            if (item.tag === 'USER-COMMAND' || item.level === 'FINANCE') return true;
             if (item.ts) {
-              return (now - item.ts < ONE_DAY_MS) && (now - item.ts >= 0);
+              const isRecent = (now - item.ts < ONE_DAY_MS) && (now - item.ts >= 0);
+              return isRecent && item.level === 'SUCCESS' && isPresensiSuccess(item.msg);
             }
-            return item.tag === 'USER-COMMAND' || item.level === 'FINANCE';
+            return false;
           });
           return valid;
         }
       }
     } catch (e) {
+      console.warn('Gagal membaca log dari localStorage:', e);
+    }
+    return INITIAL_LOGS;
+  }
       console.warn('Gagal membaca log dari localStorage:', e);
     }
     return INITIAL_LOGS;
@@ -171,18 +186,8 @@
             if (now - itemTs >= ONE_DAY_MS || now - itemTs < 0) return;
 
             const raw = d.text || '';
-            // HANYA tangkap & tampilkan baris SUKSES presensi dari Ethol Academic Notifier (bukan login & bukan logout)
-            const lower = raw.toLowerCase();
-            const isLoginOrLogout = lower.includes('login') || lower.includes('logout') || lower.includes('keluar');
-            const isPresensiSuccess = lower.includes('presensi') && (
-              lower.includes('berhasil') ||
-              lower.includes('sukses') ||
-              lower.includes('tercatat') ||
-              lower.includes('hadir') ||
-              lower.includes('dilakukan')
-            ) && !isLoginOrLogout;
-
-            if (isPresensiSuccess) {
+            // HANYA tangkap & tampilkan baris SUKSES presensi murni dari Ethol Academic Notifier
+            if (isPresensiSuccess(raw)) {
               const cleanMsg = raw
                 .replace(/\[SCREENSHOT:[^\]]+\]/gi, '')
                 .replace(/\[SUKSES\]/gi, '')
@@ -211,15 +216,12 @@
       if (!screen) return;
       const now = Date.now();
 
-      // HANYA menampilkan log sukses absensi dari Ethol Academic Notifier dalam rentang 1 hari (24 jam) (atau perintah CLI saldo)
+      // HANYA menampilkan log presensi yang benar-benar berhasil dari Ethol Academic Notifier dalam rentang 1 hari (24 jam) (atau perintah CLI saldo)
       const filtered = logs.filter(item => {
         if (item.ts && (now - item.ts >= ONE_DAY_MS || now - item.ts < 0)) {
           return false;
         }
-        const isEtholSuccess = item.level === 'SUCCESS' && (
-          item.msg.includes('Presensi') ||
-          item.msg.includes('presensi')
-        ) && !item.msg.toLowerCase().includes('logout') && !item.msg.toLowerCase().includes('login');
+        const isEtholSuccess = item.level === 'SUCCESS' && isPresensiSuccess(item.msg);
         const isCli = item.tag === 'USER-COMMAND' || item.level === 'FINANCE';
 
         if (currentFilter === 'ALL') return isEtholSuccess || isCli;
@@ -254,13 +256,8 @@
     }
 
     function addLogEntry(level, tag, msg, ts = null) {
-      // Filter ketat: Pastikan hanya sukses absensi Ethol atau perintah CLI yang dicatat
-      const isEtholSuccess = (level || '').toUpperCase() === 'SUCCESS' && (
-        (tag && tag.toUpperCase().includes('ETHOL')) ||
-        String(msg).includes('Presensi') ||
-        String(msg).includes('presensi') ||
-        String(msg).includes('Logout resmi')
-      );
+      // Filter ketat: Pastikan HANYA sukses absensi Ethol murni atau perintah CLI yang dicatat
+      const isEtholSuccess = (level || '').toUpperCase() === 'SUCCESS' && isPresensiSuccess(msg);
       const isCli = tag === 'USER-COMMAND' || level === 'FINANCE' || tag === 'CLI-HELP';
 
       if (!isEtholSuccess && !isCli) return;

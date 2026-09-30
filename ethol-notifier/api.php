@@ -199,6 +199,18 @@ function getPresensiCourseKey($text) {
     return substr(preg_replace('/[^a-z0-9]/', '_', $lower), 0, 40);
 }
 
+function isPresensiSuccess($text) {
+    if (!$text) return false;
+    $clean = preg_replace('/\\x1b\\[[0-9;]*m/', '', (string)$text);
+    $lower = strtolower(trim($clean));
+    if (strpos($lower, 'warn') !== false || strpos($lower, 'error') !== false || strpos($lower, 'info') !== false) return false;
+    if (strpos($lower, 'login') !== false || strpos($lower, 'logout') !== false || strpos($lower, 'keluar') !== false) return false;
+    if (strpos($lower, 'tidak ada') !== false || strpos($lower, 'belum ada') !== false || strpos($lower, 'gagal') !== false || strpos($lower, 'disabled') !== false) return false;
+    $hasPresensi = strpos($lower, 'presensi') !== false || strpos($lower, 'kehadiran') !== false;
+    $hasSuccess = strpos($lower, 'berhasil') !== false || strpos($lower, 'sukses') !== false || strpos($lower, 'tercatat') !== false || strpos($lower, 'hadir') !== false || strpos($lower, 'dilakukan') !== false;
+    return $hasPresensi && $hasSuccess;
+}
+
 // ── Penanganan Khusus logs agar memfilter presensi maksimal 1 hari (24 jam) & anti-duplikasi ──
 if ($path === "logs") {
     $nowMs = time() * 1000;
@@ -214,8 +226,9 @@ if ($path === "logs") {
             if (is_array($lines)) {
                 foreach ($lines as $item) {
                     $itemTs = isset($item["ts"]) ? (float)$item["ts"] : $nowMs;
-                    if (($nowMs - $itemTs) < $oneDayMs && ($nowMs - $itemTs) >= 0) {
-                        $courseKey = getPresensiCourseKey($item["text"] ?? "");
+                    $itemText = $item["text"] ?? "";
+                    if (($nowMs - $itemTs) < $oneDayMs && ($nowMs - $itemTs) >= 0 && isPresensiSuccess($itemText)) {
+                        $courseKey = getPresensiCourseKey($itemText);
                         if (!isset($seenSig[$courseKey])) {
                             $seenSig[$courseKey] = true;
                             $filteredLines[] = $item;
@@ -243,8 +256,9 @@ if ($path === "logs") {
                 if (is_array($lines)) {
                     foreach ($lines as $item) {
                         $itemTs = isset($item["ts"]) ? (float)$item["ts"] : $nowMs;
-                        if (($nowMs - $itemTs) < $oneDayMs && ($nowMs - $itemTs) >= 0) {
-                            $courseKey = getPresensiCourseKey($item["text"] ?? "");
+                        $itemText = $item["text"] ?? "";
+                        if (($nowMs - $itemTs) < $oneDayMs && ($nowMs - $itemTs) >= 0 && isPresensiSuccess($itemText)) {
+                            $courseKey = getPresensiCourseKey($itemText);
                             if (!isset($seenSig[$courseKey])) {
                                 $seenSig[$courseKey] = true;
                                 $filteredLines[] = $item;
