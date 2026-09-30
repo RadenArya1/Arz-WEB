@@ -180,10 +180,28 @@
       if (filtered.length === 0) {
         container.innerHTML = `
           <div class="projects-empty">
-            <i class="fa-solid fa-scroll"></i>
-            <p>Tidak ada proyek untuk kategori atau kata kunci tersebut.</p>
+            <div class="empty-icon-wrap"><i class="fa-solid fa-scroll"></i></div>
+            <p class="empty-title">Tidak Ada Proyek Ditemukan</p>
+            <p class="empty-sub">Tidak ada modul yang cocok dengan kata kunci atau filter saat ini.</p>
+            <button id="btnResetProjectFilter" class="btn-empty-reset" type="button">
+              <i class="fa-solid fa-rotate-left"></i> Reset Filter
+            </button>
           </div>
         `;
+        const resetBtn = container.querySelector('#btnResetProjectFilter');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            searchQuery = '';
+            currentCategory = 'ALL';
+            if (searchInput) searchInput.value = '';
+            if (catTabs) {
+              catTabs.querySelectorAll('.proj-cat-tab').forEach(t => {
+                t.classList.toggle('active', t.getAttribute('data-category') === 'ALL');
+              });
+            }
+            render();
+          });
+        }
         return;
       }
 

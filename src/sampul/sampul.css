@@ -140,6 +140,8 @@
 
 .clock-display {
   font-family: var(--font-magic);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
   font-size: clamp(1.05rem, 1.55vw, 1.5rem);
   font-weight: 700;
   color: #fff4d1;
@@ -206,7 +208,12 @@
 }
 
 .btn-enter-grimoire:active {
-  transform: translateX(-50%) translateY(1px) scale(0.98);
+  transform: translateX(-50%) translateY(1px) scale(0.97);
+}
+
+.btn-enter-grimoire:focus-visible {
+  outline: 2px solid var(--border-gold-bright) !important;
+  outline-offset: 3px !important;
 }
 
 .btn-inner {

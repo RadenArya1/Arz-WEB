@@ -1031,6 +1031,9 @@ const server = http.createServer((req, res) => {
   if (reqPath.startsWith('/screenshots/')) {
     reqPath = '/ethol-notifier' + reqPath;
   }
+  if (reqPath.startsWith('/auto-absen')) {
+    reqPath = '/lab' + (reqPath.startsWith('/auto-absen/') ? reqPath : '/auto-absen/');
+  }
   let filePath = path.join(__dirname, reqPath === '/' ? 'index.html' : reqPath);
   if (!fs.existsSync(filePath) && reqPath.includes('screenshots')) {
     const bName = path.basename(reqPath);
@@ -1057,8 +1060,11 @@ const server = http.createServer((req, res) => {
       }
     }
 
+    const fileExt = String(path.extname(filePath)).toLowerCase();
+    const effectiveContentType = mimeTypes[fileExt] || 'application/octet-stream';
+
     const range = req.headers.range;
-    if (range && ['.mp4', '.mov', '.webm'].includes(extname)) {
+    if (range && ['.mp4', '.mov', '.webm'].includes(fileExt)) {
       const parts   = range.replace(/bytes=/, '').split('-');
       const start   = parseInt(parts[0], 10);
       const end     = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
@@ -1066,13 +1072,13 @@ const server = http.createServer((req, res) => {
         'Content-Range':  `bytes ${start}-${end}/${stats.size}`,
         'Accept-Ranges':  'bytes',
         'Content-Length': (end - start) + 1,
-        'Content-Type':   contentType,
+        'Content-Type':   effectiveContentType,
       });
       fs.createReadStream(filePath, { start, end }).pipe(res);
     } else {
       res.writeHead(200, {
         'Content-Length': stats.size,
-        'Content-Type':   contentType,
+        'Content-Type':   effectiveContentType,
         'Accept-Ranges':  'bytes',
         'Cache-Control':  'no-cache, no-store, must-revalidate',
         'Pragma':         'no-cache',

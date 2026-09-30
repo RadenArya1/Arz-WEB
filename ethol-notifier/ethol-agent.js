@@ -334,9 +334,9 @@ async function runAutoAbsen() {
   log.divider();
 
   // ──────────────────────────────────────────────────────────────────
-  // STEP 1: Launch Browser
+  // STEP 1: Launch Browser (Pilar 3: Server Resource Optimization)
   // ──────────────────────────────────────────────────────────────────
-  log.step(1, 'Menginisialisasi browser Puppeteer...');
+  log.step(1, 'Menginisialisasi browser Puppeteer (Master Automator Mode)...');
 
   const launchArgs = [
     '--no-sandbox',
@@ -344,6 +344,13 @@ async function runAutoAbsen() {
     '--disable-dev-shm-usage',
     '--disable-gpu',
     '--no-first-run',
+    '--no-zygote',
+    '--single-process',
+    '--disable-extensions',
+    '--disable-background-networking',
+    '--disable-default-apps',
+    '--disable-sync',
+    '--mute-audio',
     '--disable-blink-features=AutomationControlled',
   ];
 
@@ -357,25 +364,40 @@ async function runAutoAbsen() {
     launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN;
   }
 
-  const browser = await puppeteer.launch(launchOptions);
-
-  browser.on('targetcreated', async (target) => {
-    const newPage = await target.page();
-    if (!newPage) return;
-    await newPage.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
-  });
-
-  const mainPage = await browser.newPage();
-  await mainPage.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-  });
-
-  const absenHasil = [];
+  let browser = null;
+  let mainPage = null;
   let ethPage = null;
+  const absenHasil = [];
 
   try {
+    browser = await puppeteer.launch(launchOptions);
+
+    browser.on('targetcreated', async (target) => {
+      const newPage = await target.page();
+      if (!newPage) return;
+      await newPage.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+      });
+    });
+
+    mainPage = await browser.newPage();
+    await mainPage.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
+
+    // Pilar 3: Request Interception untuk blokir font dan media berat demi efisiensi RAM/bandwidth server
+    try {
+      await mainPage.setRequestInterception(true);
+      mainPage.on('request', (req) => {
+        const rt = req.resourceType();
+        if (['font', 'media'].includes(rt)) {
+          req.abort();
+        } else {
+          req.continue();
+        }
+      });
+    } catch (_) {}
+
     // ──────────────────────────────────────────────────────────────────
     // STEP 2: Buka Ethol
     // ──────────────────────────────────────────────────────────────────
@@ -384,38 +406,48 @@ async function runAutoAbsen() {
     log.info(`URL: ${mainPage.url()}`);
 
     // ──────────────────────────────────────────────────────────────────
-    // STEP 3: Klik Tombol Login
+    // STEP 3: Klik Tombol Login (Pilar 1: Resilient Semantic Locators)
     // ──────────────────────────────────────────────────────────────────
     log.step(3, 'Klik tombol Login di navbar...');
 
-    const loginSelectors = ['button._navLogin_23sva_112', 'button[class*="navLogin"]'];
+    const loginSelectors = [
+      'button[class*="navLogin"]',
+      'button._navLogin_23sva_112',
+      'button[type="button"]',
+      'a[href*="login"]',
+      '[data-testid="login-button"]',
+    ];
     let loginOk = false;
     for (const sel of loginSelectors) {
       try {
-        await mainPage.waitForSelector(sel, { timeout: 5000, visible: true });
-        await mainPage.click(sel);
-        loginOk = true;
-        log.info(`Klik: ${sel}`);
-        break;
-      } catch { /* lanjut */ }
+        await mainPage.waitForSelector(sel, { timeout: 4000, visible: true });
+        const text = await mainPage.$eval(sel, el => (el.innerText || '').trim().toLowerCase()).catch(() => '');
+        if (text.includes('login') || sel.includes('navLogin')) {
+          await mainPage.click(sel);
+          loginOk = true;
+          log.info(`Klik Login via selektor: ${sel}`);
+          break;
+        }
+      } catch { /* lanjut ke kandidat berikutnya */ }
     }
 
     if (!loginOk) {
-      // Fallback via evaluate
+      // Fallback via evaluate teks semantik
       loginOk = await mainPage.evaluate(() => {
-        for (const btn of document.querySelectorAll('button')) {
-          if (btn.innerText.trim().toLowerCase() === 'login') { btn.click(); return true; }
+        for (const btn of document.querySelectorAll('button, a')) {
+          const txt = (btn.innerText || '').trim().toLowerCase();
+          if (txt === 'login' || txt.includes('masuk')) { btn.click(); return true; }
         }
         return false;
       });
-      if (loginOk) log.info('Klik Login via teks evaluate.');
+      if (loginOk) log.info('Klik Login via evaluasi teks semantik.');
     }
 
-    if (!loginOk) throw new Error('Tombol Login tidak ditemukan.');
+    if (!loginOk) throw new Error('Tombol Login tidak ditemukan pada navbar.');
     await delay(CONFIG.shortWait);
 
     // ──────────────────────────────────────────────────────────────────
-    // STEP 4: Pilih opsi SSO
+    // STEP 4: Pilih opsi SSO (Pilar 1: Resilient Locators)
     // ──────────────────────────────────────────────────────────────────
     log.step(4, 'Memilih opsi Login SSO (Dosen/Staff/Mahasiswa)...');
 
@@ -429,25 +461,41 @@ async function runAutoAbsen() {
     });
 
     const ssoSelectors = [
-      'a._modalOption_23sva_649',
-      'a[class*="modalOption"]',
       'a[href*="cas-redirect"]',
       'a[href*="cas"]',
+      'a[class*="modalOption"]',
+      'a._modalOption_23sva_649',
+      '[data-testid="sso-option"]',
     ];
 
     let ssoOk = false;
     for (const sel of ssoSelectors) {
       try {
-        await mainPage.waitForSelector(sel, { timeout: 5000, visible: true });
+        await mainPage.waitForSelector(sel, { timeout: 4000, visible: true });
         await mainPage.click(sel);
         ssoOk = true;
-        log.info(`Klik SSO: ${sel}`);
+        log.info(`Klik SSO via selektor: ${sel}`);
         break;
       } catch { /* lanjut */ }
     }
 
     if (!ssoOk) {
-      log.warn('Modal SSO tidak terdeteksi, navigasi langsung ke CAS...');
+      // Fallback semantik mencari link teks SSO
+      ssoOk = await mainPage.evaluate(() => {
+        for (const a of document.querySelectorAll('a, button, div[role="button"]')) {
+          const txt = (a.innerText || '').toLowerCase();
+          if (txt.includes('sso') || txt.includes('mahasiswa') || txt.includes('dosen')) {
+            a.click();
+            return true;
+          }
+        }
+        return false;
+      });
+      if (ssoOk) log.info('Klik SSO via evaluasi teks semantik.');
+    }
+
+    if (!ssoOk) {
+      log.warn('Modal SSO tidak terdeteksi, navigasi langsung ke URL CAS...');
       await mainPage.goto(CONFIG.casUrl, { waitUntil: 'domcontentloaded', timeout: CONFIG.navTimeout });
     }
 
@@ -917,12 +965,35 @@ async function runAutoAbsen() {
   } catch (err) {
     log.error(`Error: ${err.message}`);
     if (isDebug) console.error(err.stack);
+
+    // Pilar 4: Automated Visual Proof on Failure — Tangkap bukti visual saat terjadi galat
+    try {
+      const activePage = (ethPage && !ethPage.isClosed()) ? ethPage : (mainPage && !mainPage.isClosed() ? mainPage : null);
+      if (activePage) {
+        const errDir = path.join(__dirname, 'screenshots');
+        if (!fs.existsSync(errDir)) fs.mkdirSync(errDir, { recursive: true });
+        const errFile = `error_${Date.now()}.jpg`;
+        await activePage.screenshot({ path: path.join(errDir, errFile), type: 'jpeg', quality: 75 });
+        log.warn(`[DIAGNOSTIK] Tangkapan layar galat disimpan otomatis: ${errFile}`);
+      }
+    } catch (_) {}
   } finally {
+    // Pilar 3: Anti-Zombie Teardown — Jamin logout & penutupan browser tidak pernah macet
     if (ethPage && !ethPage.isClosed()) {
-      await performLogout(ethPage);
+      try {
+        await Promise.race([
+          performLogout(ethPage),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Logout melebihi batas waktu (5 detik)')), 5000))
+        ]);
+      } catch (logoutErr) {
+        log.warn(`Proses logout dibatasi: ${logoutErr.message}`);
+      }
     }
-    await browser.close();
-    log.info('Browser ditutup.');
+
+    if (browser) {
+      await browser.close().catch(() => {});
+      log.info('Browser Puppeteer ditutup secara aman (clean teardown).');
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────

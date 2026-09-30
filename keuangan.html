@@ -2,8 +2,12 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arcanum Finance • Smart Money Tracker & Receipt Parser</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#060907" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Arcanum Finance • Executive FinTech Cockpit &amp; Smart Receipt Parser</title>
+  <meta name="description" content="Arcanum Finance: Dashboard pencatatan arus kas, receipt parser otomatis bertenaga AI OCR, komparasi multi-bulan, dan pembukuan eksekutif ekosistem Arz-WEB." />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -11,7 +15,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=MedievalSharp&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=MedievalSharp&display=swap" rel="stylesheet" />
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -22,8 +26,8 @@
   <!-- Tesseract.js CDN for Automatic Client-Side Receipt OCR (Image-to-Text) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-  <!-- Feature Stylesheet -->
-  <link rel="stylesheet" href="src/keuangan/keuangan.css?v=20260916_merchant_fix" />
+  <!-- Feature Stylesheet: Master Studio Unified Architecture -->
+  <link rel="stylesheet" href="src/keuangan/keuangan.css?v=20260930_master_overhaul_v3" />
 </head>
 <body class="keuangan-body">
   <!-- Canvas Partikel Sihir Latar Belakang -->
@@ -39,8 +43,20 @@
         <h1>Arcanum Finance</h1>
         <div class="brand-subtitle">
           <span class="status-live-dot"></span>
-          <span>Smart Receipt Parser &amp; Expense Analytics • Grimoire Ecosystem</span>
+          <span>Executive FinTech Cockpit &amp; Smart Receipt Parser • Arz-WEB</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Telemetry Status Badges -->
+    <div class="topbar-telemetry-cluster">
+      <div class="telemetry-chip chip-ocr">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>AI OCR v5 • Ready</span>
+      </div>
+      <div class="telemetry-chip chip-vault">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Vault • Encrypted</span>
       </div>
     </div>
 
@@ -52,7 +68,7 @@
 
       <a href="index.html" class="btn-back-grimoire" title="Kembali ke Buku Grimoire Utama">
         <i class="fa-solid fa-book-open"></i>
-        <span>Kembali ke Grimoire</span>
+        <span>Grimoire</span>
       </a>
     </div>
   </header>
@@ -71,9 +87,27 @@
 
   <!-- ================= MAIN DASHBOARD CONTAINER ================= -->
   <main class="app-container">
-    <!-- 1. KPI SUMMARY STATS (BERDASARKAN BULAN TERPILIH) -->
-    <section class="kpi-section-grid" aria-label="Ringkasan Statistik Keuangan">
-      <!-- Card 1: Pemasukan Bulan Ini -->
+    <!-- 1. BENTO KPI SUMMARY STATS -->
+    <section class="kpi-bento-grid" aria-label="Ringkasan Statistik Keuangan">
+      <!-- Card 1 (Hero Master Card): Saldo Bersih (Net Cashflow) -->
+      <div class="stat-card stat-card-net stat-card-hero">
+        <div class="stat-card-header">
+          <div class="hero-label-wrap">
+            <span class="hero-chip"><i class="fa-solid fa-scale-balanced"></i> Cashflow Health</span>
+            <span>Saldo Bersih Konsolidasi</span>
+          </div>
+          <span class="trend-badge positive" id="kpiNetBadge"><i class="fa-solid fa-shield-halved"></i> Surplus</span>
+        </div>
+        <div class="stat-card-value hero-value" id="kpiNetCashflow">Rp 0</div>
+        <div class="stat-card-footer">
+          <div class="hero-footer-metrics">
+            <span id="kpiNetPeriod"><i class="fa-solid fa-calculator"></i> Pemasukan Bersih - Pengeluaran</span>
+          </div>
+          <span class="hero-audit-status"><i class="fa-solid fa-circle-check"></i> Audit Real-Time</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Pemasukan Bulan Ini -->
       <div class="stat-card stat-card-income">
         <div class="stat-card-header">
           <span id="kpiIncomeLabel">Pemasukan Bulan Ini</span>
@@ -82,11 +116,11 @@
         <div class="stat-card-value text-income" id="kpiTotalIncome">+ Rp 0</div>
         <div class="stat-card-footer">
           <span class="trend-badge positive"><i class="fa-solid fa-circle-arrow-down"></i> Uang Masuk</span>
-          <span id="kpiIncomePeriod">Bulan September 2026</span>
+          <span id="kpiIncomePeriod">Bulan Berjalan</span>
         </div>
       </div>
 
-      <!-- Card 2: Pengeluaran Bulan Ini -->
+      <!-- Card 3: Pengeluaran Bulan Ini -->
       <div class="stat-card stat-card-expense">
         <div class="stat-card-header">
           <span id="kpiExpenseLabel">Pengeluaran Bulan Ini</span>
@@ -95,48 +129,39 @@
         <div class="stat-card-value text-expense" id="kpiTotalExpense">- Rp 0</div>
         <div class="stat-card-footer">
           <span class="trend-badge warning"><i class="fa-solid fa-circle-arrow-up"></i> Uang Keluar</span>
-          <span id="kpiExpensePeriod">Bulan September 2026</span>
+          <span id="kpiExpensePeriod">Bulan Berjalan</span>
         </div>
       </div>
 
-      <!-- Card 3: Saldo Bersih (Net Cashflow) -->
-      <div class="stat-card stat-card-net">
+      <!-- Card 4: Total Transaksi Terverifikasi -->
+      <div class="stat-card stat-card-velocity">
         <div class="stat-card-header">
-          <span>Saldo Bersih (Cashflow)</span>
-          <div class="stat-card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+          <span>Aktivitas &amp; Transaksi</span>
+          <div class="stat-card-icon icon-velocity"><i class="fa-solid fa-receipt"></i></div>
         </div>
-        <div class="stat-card-value" id="kpiNetCashflow">Rp 0</div>
+        <div class="stat-card-value text-velocity" id="kpiTxCount">0</div>
         <div class="stat-card-footer">
-          <span class="trend-badge positive" id="kpiNetBadge"><i class="fa-solid fa-shield-halved"></i> Surplus</span>
-          <span id="kpiNetPeriod">Pemasukan - Pengeluaran</span>
-        </div>
-      </div>
-
-      <!-- Card 4: Total Transaksi -->
-      <div class="stat-card">
-        <div class="stat-card-header">
-          <span>Total Transaksi</span>
-          <div class="stat-card-icon"><i class="fa-solid fa-receipt"></i></div>
-        </div>
-        <div class="stat-card-value" id="kpiTxCount">0</div>
-        <div class="stat-card-footer">
-          <span class="trend-badge positive"><i class="fa-solid fa-circle-check"></i> Terverifikasi</span>
+          <span class="trend-badge info"><i class="fa-solid fa-circle-check"></i> Terverifikasi</span>
           <span id="kpiTxPeriod">Inflow &amp; Outflow</span>
         </div>
       </div>
     </section>
 
-    <!-- 2. WORKSPACE GRID (CHARTS & SMART RECEIPT PARSER) -->
+    <!-- 2. WORKSPACE GRID (DUAL COCKPIT & SMART RECEIPT PARSER) -->
     <section class="workspace-grid">
       <!-- Panel Kiri: Visualisasi Tren Pengeluaran Keuangan & Perbandingan Dua Kotak -->
       <div class="charts-stack-card">
         <div class="section-head chart-clean-head">
-          <h2><i class="fa-solid fa-chart-simple" style="color: var(--border-gold-glow);"></i> Perbandingan Arus Kas Multi-Bulan</h2>
+          <h2><i class="fa-solid fa-chart-column" style="color: var(--border-gold-glow);"></i> Perbandingan Arus Kas Multi-Bulan</h2>
+          <button type="button" class="btn-open-comp-modal" id="btnOpenMultiMonthModal" title="Buka Tabel Komparasi Penuh Seluruh Riwayat Bulan">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Matriks Penuh</span>
+          </button>
         </div>
 
         <!-- DUAL BOX GRID: KOTAK KIRI (FOKUS) & KOTAK KANAN ('b' BULAN AKTIF) -->
         <div class="dual-month-grid">
-          <!-- KOTAK PUTIH KIRI: BULAN FOKUS (DENGAN PANAH < > & DAFTAR DOWN HISTORY) -->
+          <!-- KOTAK KIRI: BULAN FOKUS (DENGAN PANAH < > & DROPDOWN RIWAYAT) -->
           <div class="month-box month-box-focus">
             <div class="month-box-header">
               <button type="button" class="btn-box-arrow" id="btnFocusPrev" title="Bulan Sebelumnya">
@@ -163,7 +188,7 @@
             </div>
           </div>
 
-          <!-- KOTAK PUTIH KANAN: BULAN BERJALAN ('b' / AKTIF) -->
+          <!-- KOTAK KANAN: BULAN BERJALAN ('b' / AKTIF) -->
           <div class="month-box month-box-active">
             <div class="month-box-header header-active-month">
               <div class="active-month-label-wrap">
@@ -184,15 +209,21 @@
         </div>
       </div>
 
-      <!-- Panel Kanan: Smart Receipt Parser & Input Zone -->
+      <!-- Panel Kanan: Smart Receipt Parser (Scanner Chamber) -->
       <div class="parser-workspace-card">
         <div class="section-head">
           <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--border-gold-glow);"></i> Smart Receipt &amp; Transfer Parser</h2>
           <span class="trend-badge positive"><i class="fa-solid fa-bolt"></i> Auto-Detect Inflow/Outflow</span>
         </div>
 
-        <!-- AI Receipt Image Drop & Paste Zone (Seperti Input AI Chat) -->
+        <!-- AI Receipt Image Drop & Paste Zone (Scanner Chamber) -->
         <div class="image-upload-dropzone" id="receiptDropzone" tabindex="0">
+          <!-- Tech HUD Corner Brackets -->
+          <span class="scan-bracket corner-tl"></span>
+          <span class="scan-bracket corner-tr"></span>
+          <span class="scan-bracket corner-bl"></span>
+          <span class="scan-bracket corner-br"></span>
+
           <input type="file" id="receiptFileInput" accept="image/*" style="display: none;" />
           
           <div class="dropzone-inner" id="dropzoneNormalState">
@@ -201,10 +232,11 @@
             </div>
             <div class="dropzone-text-group">
               <p class="dropzone-main-text">
-                <span class="highlight-action"><i class="fa-solid fa-paste"></i> Tempel Bukti Transfer / Struk (Ctrl + V)</span>
+                <span class="highlight-action"><i class="fa-solid fa-paste"></i> Tempel Bukti Transfer / Struk</span>
+                <kbd class="kbd-badge">Ctrl + V</kbd>
               </p>
               <span class="dropzone-sub-text">
-                Mendukung struk pembayaran QR / m-Transfer &amp; notifikasi transfer masuk BCA. AI mendeteksi otomatis!
+                Mendukung struk QRIS, m-Transfer BCA, notifikasi transfer masuk/keluar. AI OCR mengekstrak nominal instan.
               </span>
               <div class="dropzone-actions-row">
                 <button type="button" class="btn-paste-clipboard" id="btnPasteClipboard" title="Tempel gambar dari clipboard komputer/HP">
@@ -235,7 +267,7 @@
           </div>
         </div>
 
-        <!-- Hasil Parsing / Review Card -->
+        <!-- Hasil Parsing / Review Card (Digital Receipt Voucher) -->
         <div class="parsed-review-card" id="parsedReviewCard" style="display: none;">
           <div class="review-card-top">
             <!-- Sakelar Toggle Pemasukan / Pengeluaran -->
@@ -269,7 +301,7 @@
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
-            <span class="review-image-label"><i class="fa-solid fa-paperclip"></i> Foto bukti transaksi siap disimpan</span>
+            <span class="review-image-label"><i class="fa-solid fa-paperclip"></i> Bukti struk terlampir &amp; siap disimpan</span>
           </div>
 
           <div class="review-card-actions">
@@ -282,7 +314,7 @@
       </div>
     </section>
 
-    <!-- 3. TRANSACTION HISTORY TABLE -->
+    <!-- 3. TRANSACTION HISTORY TABLE (EXECUTIVE FINTECH LEDGER) -->
     <section class="table-section-card">
       <div class="table-toolbar-row">
         <div class="section-head" style="border-bottom: none; padding-bottom: 0;">
@@ -300,7 +332,7 @@
           </button>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="table-toolbar-controls">
           <!-- Pilihan Lingkup Periode Tabel -->
           <div class="period-scope-wrap">
             <select id="txPeriodScope" class="period-scope-select" title="Pilih cakupan transaksi yang ditampilkan">
@@ -312,6 +344,7 @@
           <div class="search-box-wrap">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="txSearchInput" placeholder="Cari pihak, nominal, tanggal..." />
+            <kbd class="search-kbd-hint">/</kbd>
           </div>
           <span class="table-stats-count" id="tableStatsCount">Menampilkan 0 transaksi</span>
         </div>
@@ -321,7 +354,7 @@
       <div id="historyBanner" class="history-banner" style="display: none;">
         <div class="history-banner-content">
           <i class="fa-solid fa-box-archive"></i>
-          <span>Anda sedang melihat arsip transaksi: <strong id="historyBannerMonthName">Agustus 2026</strong>. Bulan ini telah berlalu dan tersimpan permanen di riwayat.</span>
+          <span>Anda sedang melihat arsip transaksi: <strong id="historyBannerMonthName">Agustus 2026</strong>. Bulan ini telah tersimpan permanen di riwayat.</span>
         </div>
         <button type="button" class="btn-history-back-active" id="btnBackToActiveFromBanner">
           <i class="fa-solid fa-bolt"></i> Kembali ke Bulan Aktif
@@ -334,10 +367,10 @@
             <tr>
               <th style="width: 140px;">Waktu</th>
               <th>Pihak / Keterangan Transaksi</th>
-              <th style="width: 140px;">Jenis Transaksi</th>
+              <th style="width: 140px; text-align: center;">Jenis Transaksi</th>
               <th style="width: 90px; text-align: center;">Bukti</th>
-              <th style="text-align: right; width: 160px;">Nominal (Arus Kas)</th>
-              <th style="text-align: center; width: 70px;">Aksi</th>
+              <th style="text-align: right; width: 170px;">Nominal (Arus Kas)</th>
+              <th style="text-align: center; width: 75px;">Aksi</th>
             </tr>
           </thead>
           <tbody id="txTableBody">
@@ -356,7 +389,7 @@
           <i class="fa-solid fa-layer-group modal-gold-icon"></i>
           <div>
             <h3>Perbandingan Arus Kas Multi-Bulan</h3>
-            <span class="modal-subtext">Perbandingan menyeluruh bulan aktif &amp; seluruh riwayat bulan yang telah berlalu</span>
+            <span class="modal-subtext">Konsolidasi menyeluruh seluruh siklus pembukuan aktif &amp; riwayat masa lalu</span>
           </div>
         </div>
         <button type="button" class="btn-close-modal" id="btnCloseMultiMonthModal" title="Tutup Modal">

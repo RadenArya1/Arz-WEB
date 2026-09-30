@@ -23,11 +23,15 @@ Asisten AI **WAJIB MENJALANKAN 5 TAHAPAN UTAMA SECARA OTOMATIS TANPA MEMINTA KON
 - **Kondisi Lolos (*Passed*):** Jika skenario uji validasi berhasil tanpa regresi fatal, AI otomatis melanjutkan ke tahapan audit HP dan deployment.
 - **Kondisi Gagal (*Failed / Bug Detected*):** Apabila terdeteksi error fatal atau fungsi antarmuka rusak, proses deployment ke server web **WAJIB DIBATALKAN**. AI wajib melaporkan rincian kegagalan pengujian dan memberikan rekomendasi perbaikan sebelum kode dinaikkan ke produksi publik.
 
-### 2. Audit & Optimalisasi Tampilan HP (Mobile Fit)
-- Seluruh antarmuka yang diubah/ditambahkan wajib bebas horizontal overflow (`max-width: 100vw; overflow-x: hidden;`).
-- Transformasi grid/layout ke susunan vertikal (*stacking*) yang rapi di layar HP (~360px - 480px / 390x844).
-- Target sentuh tombol navigasi/aksi nyaman dengan jempol (min 34px - 44px).
-- Tabel data dibungkus dalam `.table-scroll-container`.
+### 2. Audit & Transformasi UI Otomatis untuk Lingkungan Android / Mobile (Android-Fit Protocol)
+- Sebelum dipublikasikan ke web, Asisten AI **WAJIB secara otomatis mengaudit dan mentransformasi UI halaman web agar pas 1:1 dengan lingkungan Android**:
+  1. **Dynamic Viewport Unit (`100dvh` / `100svh`)**: Wajib menggunakan `min-height: 100dvh;` pada kontainer root agar layout tidak terpotong oleh dynamic URL bar browser Android (Chrome / Samsung Internet).
+  2. **Android Safe Area Insets**: Seluruh header dan bottom container wajib mengadopsi `env(safe-area-inset-top)` dan `env(safe-area-inset-bottom)` agar tidak menabrak *punch-hole camera*, *notch*, atau *gesture navigation bar* Android.
+  3. **Target Sentuh Standar Android (Minimal 48px / 48dp)**: Seluruh tombol aksi, tab switcher, dan kontrol navigasi wajib memiliki target sentuh minimal **48px × 48px** dengan gap sentuh 8px–12px (mencegah *fat-finger error* sesuai Google Material Design 3).
+  4. **Zona Jempol (Fitts' Law Thumb-Zone)**: Aksi-aksi utama dan navigasi prioritas wajib dirancang nyaman untuk sepertiga bawah layar yang mudah dijangkau satu jempol.
+  5. **Anti-Pull-to-Refresh & Tap Delay**: Mencegah browser me-refresh tak sengaja saat tabel/grafik digeser via `overscroll-behavior-y: contain;` dan `touch-action: manipulation;`.
+  6. **Android Status Bar Sync**: Pastikan tag `<meta name="theme-color" content="...">` dan `<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />` terpasang rapi.
+  7. **Zero Horizontal Overflow & Scroll Terisolasi**: `max-width: 100vw; overflow-x: hidden;` dengan seluruh tabel data dibungkus dalam `.table-scroll-container` (`-webkit-overflow-scrolling: touch;`).
 
 ### 3. Otomatisasi Pembaruan File Dokumentasi ([Arz-WEB.md](file:///c:/Users/Raden/OneDrive/Documents/New%20folder%20(2)/Arz-WEB.md) & [README.md](file:///c:/Users/Raden/OneDrive/Documents/New%20folder%20(2)/README.md))
 - Asisten AI **WAJIB secara otomatis memperbarui file `Arz-WEB.md`** sebelum atau bersamaan dengan migrasi ke server web:
