@@ -211,22 +211,23 @@
         
         let linkBtn = '';
         if (p.url && p.url !== '#' && !isGrimoire) {
-          linkBtn = `<a href="${p.url}" class="btn-popover-link" title="Buka Aplikasi Web (${p.url})"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka</a>`;
+          const isExternal = p.url.startsWith('http');
+          linkBtn = `<a href="${p.url}" class="btn-popover-link" ${isExternal ? 'target="_blank" rel="noopener noreferrer"' : ''} aria-label="Buka Aplikasi Web ${escapeHtml(p.title)}"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka</a>`;
         }
 
         const actionsHtml = isGrimoire ? `
               <div class="popover-actions">
-                <span class="popover-host-badge" title="Halaman dashboard utama yang sedang aktif">
+                <span class="popover-host-badge">
                   <i class="fa-solid fa-circle-check"></i> Status: Aktif (Host Utama)
                 </span>
               </div>
         ` : `
               <div class="popover-actions">
-                <button class="btn-popover-ping" data-id="${p.id}" title="Kirim sinyal uji ke Konsol Notifikasi">
+                <button type="button" class="btn-popover-ping" data-id="${p.id}" aria-label="Kirim sinyal uji ke Konsol Notifikasi">
                   <i class="fa-solid fa-tower-broadcast"></i> Sinyal
                 </button>
                 ${linkBtn}
-                <button class="btn-popover-del" data-id="${p.id}" title="Hapus dari katalog">
+                <button type="button" class="btn-popover-del" data-id="${p.id}" aria-label="Hapus dari katalog">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
@@ -234,19 +235,24 @@
 
         return `
           <div class="project-icon-tile status-${statusClass}${isGrimoire ? ' tile-grimoire' : ''}" data-id="${p.id}" tabindex="0">
-            <div class="project-icon-box" data-id="${p.id}" title="${escapeHtml(p.title)} (${escapeHtml(p.statusLabel || p.status)})">
-              <span class="status-pulse-dot" title="${escapeHtml(p.statusLabel || p.status)}"></span>
+            <div class="project-icon-box" data-id="${p.id}" aria-label="${escapeHtml(p.title)} (${escapeHtml(p.statusLabel || p.status)})">
+              <span class="status-pulse-dot" aria-label="${escapeHtml(p.statusLabel || p.status)}"></span>
               <i class="fa-solid ${p.icon || 'fa-globe'}"></i>
             </div>
-            <span class="project-icon-label" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</span>
+            <span class="project-icon-label" aria-label="${escapeHtml(p.title)}">${escapeHtml(p.title)}</span>
 
-            <!-- Popover Detail Interaktif -->
+            <!-- Popover Detail Interaktif (Eksklusif & Bebas Tumpang Tindih) -->
             <div class="project-popover">
               <div class="popover-header">
-                <span class="popover-badge ${statusClass}">
-                  <i class="fa-solid fa-circle" style="font-size: 0.38rem;"></i> ${escapeHtml(p.statusLabel || p.status)}
-                </span>
-                <span class="popover-target"><i class="fa-solid fa-server"></i> ${escapeHtml(p.target || 'Web App')}</span>
+                <div class="popover-header-left">
+                  <span class="popover-badge ${statusClass}">
+                    <i class="fa-solid fa-circle" style="font-size: 0.38rem;"></i> ${escapeHtml(p.statusLabel || p.status)}
+                  </span>
+                  <span class="popover-target"><i class="fa-solid fa-server"></i> ${escapeHtml(p.target || 'Web App')}</span>
+                </div>
+                <button type="button" class="btn-popover-close" data-id="${p.id}" aria-label="Tutup Popover">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
               </div>
               <h4 class="popover-title">${escapeHtml(p.title)}</h4>
               <p class="popover-desc">${escapeHtml(p.desc)}</p>
@@ -257,42 +263,56 @@
         `;
       }).join('');
 
-      // Pasang event listener untuk Klik Langsung pada Kotak Icon
+      // Pasang event listener untuk Klik pada Ubin / Kotak Icon
       container.querySelectorAll('.project-icon-box').forEach(box => {
         box.addEventListener('click', (e) => {
-          // Cegah trigger jika klik berasal dari popover
+          // Cegah trigger jika klik berasal dari dalam popover
           if (e.target.closest('.project-popover')) return;
+          e.stopPropagation();
 
+          const tile = box.closest('.project-icon-tile');
+          if (!tile) return;
+
+          const wasOpen = tile.classList.contains('show-popover');
+          // Tutup seluruh popover aktif di katalog agar tidak ada tumpang tindih
+          container.querySelectorAll('.project-icon-tile.show-popover').forEach(t => t.classList.remove('show-popover'));
+          if (!wasOpen) {
+            tile.classList.add('show-popover');
+          }
+        });
+
+        // Pintasan Double Click: Langsung membuka URL jika aplikasi memiliki tautan
+        box.addEventListener('dblclick', (e) => {
+          if (e.target.closest('.project-popover')) return;
           const id = box.getAttribute('data-id');
           const targetProj = currentProjects.find(p => p.id === id);
-          if (!targetProj) return;
-
-          // Khusus Grimoire Dashboard: tidak ada logic buka, hanya memunculkan status saja via popover
-          if (targetProj.id === 'proj_grimoire_ui') {
-            e.stopPropagation();
-            const tile = box.closest('.project-icon-tile');
-            if (tile) {
-              const wasOpen = tile.classList.contains('show-popover');
-              container.querySelectorAll('.project-icon-tile.show-popover').forEach(t => t.classList.remove('show-popover'));
-              if (!wasOpen) {
-                tile.classList.add('show-popover');
-              }
-            }
-            return;
-          }
-
-          if (targetProj.url && targetProj.url !== '#') {
+          if (targetProj && targetProj.url && targetProj.url !== '#' && targetProj.id !== 'proj_grimoire_ui') {
             window.location.href = targetProj.url;
-          } else {
-            // Jika tidak ada URL aktif, kirim sinyal uji
-            handlePingSignal(targetProj, box);
           }
         });
       });
 
-      // Klik di luar area project-icon-tile untuk menutup popover yang terbuka lewat klik
+      // Tombol Tutup (✕) pada Header Popover
+      container.querySelectorAll('.btn-popover-close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tile = btn.closest('.project-icon-tile');
+          if (tile) {
+            tile.classList.remove('show-popover');
+          }
+        });
+      });
+
+      // Klik di luar area katalog menutup seluruh popover yang aktif
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.project-icon-tile')) {
+          container.querySelectorAll('.project-icon-tile.show-popover').forEach(t => t.classList.remove('show-popover'));
+        }
+      });
+
+      // Tombol Escape menutup popover aktif
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
           container.querySelectorAll('.project-icon-tile.show-popover').forEach(t => t.classList.remove('show-popover'));
         }
       });
