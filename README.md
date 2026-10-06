@@ -69,7 +69,13 @@ flowchart TD
   - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu thumbnail bukti kehadiran dan lightbox perbesar.
   - **Dynamic Theme Metamorphosis:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif.
   - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
+  - **Standalone Task Scraper:** Engine scraper mandiri pemantau tenggat penugasan kuliah portal ETHOL PENS (≤ 5 hari).
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
+
+### 4. 🔬 Lab & Visual Inspector (`lab/` — Localhost Sandbox)
+*Laboratorium Visualisasi & Sandbox Pengujian Eksklusif Localhost*
+- **Visual Absen Inspector (`lab/proses-absen/`):** Platform observasi visual alur automasi presensi Ethol step-by-step (CAS login, form filling, validasi sesi, panel lonceng, filter 24 jam, klik kehadiran, dan histori screenshot).
+- **TestSprite Sentinel Hub (`testsprite_tests/`):** Pemantau pengujian otonom dual-suite (Playwright & REST API) dengan brankas 15 akun token dan auto-healing runner.
 
 ---
 

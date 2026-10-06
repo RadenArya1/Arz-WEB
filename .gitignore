@@ -25,12 +25,16 @@ ethol-notifier/ethol-config.json
 ethol-notifier/logs_buffer.json
 ethol-notifier/device_state.json
 ethol-notifier/node_health.json
+.puppeteer_profile/
+ethol-notifier/.puppeteer_profile/
 
 # Ephemeral Scraper Screenshots (Keep only sample for portfolio)
 ethol-notifier/**/screenshots/presensi_*.jpg
 !ethol-notifier/**/screenshots/presensi_sample.jpg
 !ethol-notifier/screenshots/presensi_sample.jpg
 ethol-notifier/ethol-notifier/
+Error_Absen/presensi_*.jpg
+Error_Absen/presensi_terbaru_*.jpg
 
 # OS & Editor Metadata
 .DS_Store

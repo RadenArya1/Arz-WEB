@@ -1,4 +1,18 @@
 {
-  "lastCheck": "2026-09-28T05:46:32.397Z",
-  "tasks": []
+  "lastCheck": "2026-10-03T23:23:10.185Z",
+  "totalPending": 1,
+  "tasks": [
+    {
+      "id": "task_1791069746887_0",
+      "title": "bab 3",
+      "matakuliah": "Konsep Teknologi",
+      "dosen": "Dosen Pengampu",
+      "deadline": "Rabu, 16 September 2026 - 23:59",
+      "deadline_indonesia": "Rabu, 16 September 2026 - 23:59",
+      "hTag": "Terlambat",
+      "status": "Belum Mengumpulkan",
+      "timeAgo": "2 hari yang lalu",
+      "url": "https://ethol.pens.ac.id/mahasiswa/beranda"
+    }
+  ]
 }

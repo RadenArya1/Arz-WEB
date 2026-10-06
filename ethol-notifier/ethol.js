@@ -26,8 +26,16 @@ const GatewayManager = {
   activePrefix: null,
 
   getCandidates() {
-    if (window.location.protocol === 'file:') {
-      return ['http://127.0.0.1:8080'];
+    const isLocal = window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname === 'localhost' || 
+                    window.location.port === '8080' || 
+                    window.location.protocol === 'file:';
+    if (isLocal) {
+      return [
+        'http://127.0.0.1:8080/api/absen',
+        '/api/absen',
+        '/ethol-notifier/api.php?path='
+      ];
     }
     return [
       '/ethol-notifier/api.php?path=',
@@ -187,17 +195,23 @@ function getCourseKey(text) {
     .replace(/^\[.*?\]\s*/g, '')
     .replace(/^[✓✔]\s*/g, '')
     .trim();
+
+  // Ekstrak nama mata kuliah dari pola standar: "... — Nama Matakuliah | ..." atau "... — Nama Matakuliah"
+  const match = clean.match(/(?:—|–|-)\s*([^|—–\n]+)/);
+  if (match && match[1]) {
+    const extracted = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (extracted.length > 2) return extracted;
+  }
+
   const lower = clean.toLowerCase();
   if (lower.includes('statistika')) return 'statistika';
-  if (lower.includes('praktikum') && lower.includes('nirkabel')) return 'praktikum_jarkom';
-  if (lower.includes('jaringan') || lower.includes('nirkabel')) return 'jarkom';
+  if (lower.includes('praktikum') && (lower.includes('jaringan') || lower.includes('nirkabel'))) return 'praktikum_jarkom';
+  if (lower.includes('sistem dan jaringan') || lower.includes('jarkom')) return 'jarkom';
   if (lower.includes('pemrograman') || lower.includes('wpl')) return 'wpl';
   if (lower.includes('embedded')) return 'embedded';
-  const parts = clean.split(/[—–:\-]/);
-  if (parts.length > 1) {
-    const c = parts[parts.length - 1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-    if (c.length > 2) return c;
-  }
+  if (lower.includes('konsep teknologi')) return 'konsep_teknologi';
+  if (lower.includes('akuisisi data')) return 'akuisisi_data';
+
   return lower.replace(/[^a-z0-9]/g, '_').slice(0, 40);
 }
 
@@ -220,7 +234,19 @@ function getStoredHistory() {
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) return [];
     const now = Date.now();
-    return list.filter(i => i && i.ts && (now - i.ts < ONE_DAY_MS) && (now - i.ts >= 0));
+    const valid = list.filter(i => i && i.ts && (now - i.ts < ONE_DAY_MS) && (now - i.ts >= 0));
+
+    // Deduplikasi ketat: Setiap mata kuliah / presensi hanya boleh terdeteksi dan tersimpan satu kali
+    const seen = new Set();
+    const deduped = [];
+    for (const item of valid) {
+      const k = getCourseKey(item.text);
+      if (!seen.has(k)) {
+        seen.add(k);
+        deduped.push(item);
+      }
+    }
+    return deduped;
   } catch { return []; }
 }
 
@@ -249,6 +275,7 @@ function isPresensiSuccess(text) {
   const lower = text.replace(/\x1b\[[0-9;]*m/g, '').trim().toLowerCase();
   if (lower.includes('login') || lower.includes('logout') || lower.includes('keluar')) return false;
   if (lower.includes('tidak ada') || lower.includes('belum ada') || lower.includes('gagal') || lower.includes('error')) return false;
+  if (lower.includes('rekapitulasi') || lower.includes('presensi berhasil :') || lower.includes('presensi berhasil:')) return false;
   return lower.includes('presensi') && (
     lower.includes('berhasil') || lower.includes('sukses') ||
     lower.includes('tercatat') || lower.includes('hadir') || lower.includes('dilakukan')
@@ -275,9 +302,10 @@ function renderTimelineCard(cleanMsg, ts, screenshotUrl, persist = true) {
 
   if (emptyView) emptyView.style.display = 'none';
 
-  // Check if exists, update in-place
-  const existing = container.querySelector(`.timeline-card[data-sig="${CSS.escape ? CSS.escape(sig) : sig}"]`);
-  if (existing) {
+  // Check if exists, update in-place dan hapus kartu duplikat berlebih
+  const existingCards = Array.from(container.querySelectorAll(`.timeline-card[data-sig="${CSS.escape ? CSS.escape(sig) : sig}"]`));
+  if (existingCards.length > 0) {
+    const existing = existingCards[0];
     renderedSigs.add(sig);
     const oldTs = Number(existing.dataset.ts || 0);
     if (itemTs >= oldTs) {
@@ -289,6 +317,11 @@ function renderTimelineCard(cleanMsg, ts, screenshotUrl, persist = true) {
       const img = existing.querySelector('.proof-thumb-img');
       if (img && finalSS) img.src = `${finalSS}?v=deck`;
     }
+    // Pastikan tidak ada kartu duplikat berlebih
+    for (let k = 1; k < existingCards.length; k++) {
+      existingCards[k].remove();
+    }
+    updateMetrics();
     if (persist) saveEntry({ text: cleanMsg, ts: itemTs, screenshot: finalSS });
     return false;
   }
@@ -376,12 +409,34 @@ function addDiagnosticLog(text, ts) {
     screen.appendChild(wrap);
   }
 
+  const clean = String(text || '').replace(/\x1b\[[0-9;]*m/g, '').trim();
+  const lower = clean.toLowerCase();
+
+  // Filter teks usang yang tidak perlu: peringatan ketiadaan sesi diabaikan
+  if (lower.includes('tidak ada sesi presensi')) return;
+
+  // Sembunyikan baris log presensi berhasil dari tray konsol diagnostik sesuai permintaan user ("hide untuk log ini")
+  // (Data presensi ini sudah tampil rapi pada kartu linimasa visual)
+  if (
+    lower.includes('presensi berhasil tercatat') || 
+    lower.includes('presensi berhasil diproses') ||
+    (lower.includes('[sukses]') && lower.includes('presensi'))
+  ) {
+    return;
+  }
+
+  // Anti-duplikasi baris berulang berturut-turut pada konsol
+  if (state.lastConsoleLog === clean) return;
+  state.lastConsoleLog = clean;
+
+  const isErr = lower.includes('[error]') || lower.includes('timeout') || lower.includes('gagal') || lower.includes('fatal:');
+
   const line = document.createElement('div');
-  line.className = 'log-line';
+  line.className = 'log-line' + (isErr ? ' log-error' : '');
   const timeStr = new Date(ts || Date.now()).toLocaleTimeString('id-ID', { hour12: false });
   line.innerHTML = `
     <span class="log-line-ts">[${timeStr}]</span>
-    <span class="log-line-text">${escapeHtml(text.replace(/\x1b\[[0-9;]*m/g, ''))}</span>
+    <span class="log-line-text">${escapeHtml(clean)}</span>
   `;
   wrap.appendChild(line);
 
@@ -583,13 +638,19 @@ async function runAbsen() {
 
     const d = res.data || {};
     if (res.ok && d.ok) {
-      showToast('Presensi berhasil dimulai di latar belakang.', 'success');
+      showToast('Presensi & pemindaian tugas terpadu dimulai di latar belakang.', 'success');
+      setTimeout(loadTasks, 6000);
+      setTimeout(syncLogs, 6000);
     } else {
-      showToast(d.msg || d.message || 'Gagal memulai presensi.', 'error');
+      const errMsg = d.msg || d.message || 'Gagal memulai presensi.';
+      showToast(errMsg, 'error');
+      addDiagnosticLog(`[ERROR] Scraper gagal: ${errMsg}`, Date.now());
     }
     await pollStatus();
   } catch (err) {
-    showToast(err?.message || 'Gagal menghubungi server.', 'error');
+    const errMsg = err?.message || 'Gagal menghubungi server.';
+    showToast(errMsg, 'error');
+    addDiagnosticLog(`[ERROR] Scraper gagal: ${errMsg}`, Date.now());
     setHubState('idle', 'Sistem Siap Absen', 'Gagal memicu presensi. Periksa apakah server backend aktif.', 1);
   } finally {
     if (btn) btn.disabled = false;
@@ -637,24 +698,6 @@ async function stopLoop() {
 
 function toggleLoopMode() {
   state.loopActive ? stopLoop() : startLoop();
-}
-
-// ─── TEST SCREENSHOT STREAM ─────────────────────────────────
-async function testPresensiStream() {
-  try {
-    showToast('Memicu audit screenshot simulasi…', 'info');
-    const res = await GatewayManager.fetchJson('test-presensi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    }, 6000);
-
-    if (res.ok) {
-      showToast('Bukti presensi simulasi berhasil diproses.', 'success');
-    }
-  } catch (err) {
-    showToast(err?.message || 'Gagal mengirim simulasi presensi.', 'error');
-  }
 }
 
 // ─── STATUS POLLING & LOG SYNC ──────────────────────────────
@@ -733,7 +776,12 @@ function connectSSE() {
   if (state.sseSource) { state.sseSource.close(); state.sseSource = null; }
 
   try {
-    const sseUrl = window.location.protocol === 'file:'
+    const isLocal = window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname === 'localhost' || 
+                    window.location.port === '8080' || 
+                    window.location.protocol === 'file:';
+
+    const sseUrl = isLocal
       ? 'http://127.0.0.1:8080/api/absen/log-stream'
       : '/ethol-notifier/api.php?path=log-stream';
 
@@ -900,7 +948,6 @@ function sendNotification(title, body) {
 // ─── EXPOSE GLOBALS ─────────────────────────────────────────
 window.runAbsen              = runAbsen;
 window.toggleLoopMode        = toggleLoopMode;
-window.testPresensiStream    = testPresensiStream;
 window.loadTasks             = loadTasks;
 window.clearConsole          = clearConsole;
 window.toggleDiagnosticsTray = toggleDiagnosticsTray;
@@ -908,7 +955,25 @@ window.openScreenshotModal   = openScreenshotModal;
 window.closeScreenshotModal  = closeScreenshotModal;
 
 // ─── INITIALIZATION ─────────────────────────────────────────
+function sanitizeLegacyLogs() {
+  const screen = $('consoleScreen');
+  if (!screen) return;
+  const legacyLines = screen.querySelectorAll('.log-line');
+  legacyLines.forEach(line => {
+    const txt = (line.textContent || '').toLowerCase();
+    if (
+      txt.includes('tidak ada sesi presensi') ||
+      txt.includes('presensi berhasil tercatat') ||
+      txt.includes('presensi berhasil diproses') ||
+      (txt.includes('[sukses]') && txt.includes('presensi'))
+    ) {
+      line.remove();
+    }
+  });
+}
+
 function init() {
+  sanitizeLegacyLogs();
   restoreFromStorage();
   connectSSE();
   syncLogs();
@@ -917,6 +982,7 @@ function init() {
 
   state.pollTimer = setInterval(pollStatus, 4000);
   setInterval(syncLogs, 2500);
+  setInterval(sanitizeLegacyLogs, 2000);
 
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();

@@ -44,28 +44,47 @@ function getPresensiCourseKey(text) {
     .replace(/^[✓✔]\s*/g, '')
     .trim();
 
+  // Ekstrak nama mata kuliah dari pola standar: "... — Nama Matakuliah | ..." atau "... — Nama Matakuliah"
+  const match = clean.match(/(?:—|–|-)\s*([^|—–\n]+)/);
+  if (match && match[1]) {
+    const extracted = match[1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (extracted.length > 2) return extracted;
+  }
+
   const lower = clean.toLowerCase();
   if (lower.includes('statistika')) return 'statistika';
-  if (lower.includes('praktikum') && lower.includes('nirkabel')) return 'praktikum_jarkom';
-  if (lower.includes('jaringan') || lower.includes('nirkabel')) return 'jarkom';
+  if (lower.includes('praktikum') && (lower.includes('jaringan') || lower.includes('nirkabel'))) return 'praktikum_jarkom';
+  if (lower.includes('sistem dan jaringan') || lower.includes('jarkom')) return 'jarkom';
   if (lower.includes('pemrograman') || lower.includes('wpl')) return 'wpl';
   if (lower.includes('embedded')) return 'embedded';
+  if (lower.includes('konsep teknologi')) return 'konsep_teknologi';
+  if (lower.includes('akuisisi data')) return 'akuisisi_data';
 
-  const parts = clean.split(/[—–:\-]/);
-  if (parts.length > 1) {
-    const candidate = parts[parts.length - 1].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-    if (candidate.length > 2) return candidate;
-  }
   return lower.replace(/[^a-z0-9]/g, '_').slice(0, 40);
 }
 
-const LOGS_BUFFER_PATH = path.join(__dirname, 'logs_buffer.json');
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const CANDIDATE_BUFFER_PATHS = [
+  path.join(__dirname, 'ethol-notifier', 'logs_buffer.json'),
+  path.join(__dirname, 'logs_buffer.json')
+];
 let logLines = []; // Buffer log khusus presensi sukses
 try {
-  if (fs.existsSync(LOGS_BUFFER_PATH)) {
-    const rawSaved = JSON.parse(fs.readFileSync(LOGS_BUFFER_PATH, 'utf8'));
+  let loadedRaw = null;
+  for (const bp of CANDIDATE_BUFFER_PATHS) {
+    if (fs.existsSync(bp)) {
+      try {
+        const d = JSON.parse(fs.readFileSync(bp, 'utf8'));
+        if (Array.isArray(d) && d.length > 0) {
+          loadedRaw = d;
+          break;
+        }
+      } catch (_) {}
+    }
+  }
+  if (loadedRaw) {
     const now = Date.now();
-    const rawFiltered = Array.isArray(rawSaved) ? rawSaved.filter(l => l && l.ts && (now - l.ts < ONE_DAY_MS) && (now - l.ts >= 0) && isPresensiSuccess(l.text || l.raw)) : [];
+    const rawFiltered = loadedRaw.filter(l => l && l.ts && (now - l.ts < ONE_DAY_MS) && (now - l.ts >= 0) && isPresensiSuccess(l.text || l.raw));
     const seenSig = new Set();
     logLines = [];
     for (const item of rawFiltered) {
@@ -79,9 +98,11 @@ try {
 } catch (_) {}
 
 function saveLogLinesBuffer() {
-  try {
-    fs.writeFileSync(LOGS_BUFFER_PATH, JSON.stringify(logLines, null, 2), 'utf8');
-  } catch (_) {}
+  for (const bp of CANDIDATE_BUFFER_PATHS) {
+    try {
+      fs.writeFileSync(bp, JSON.stringify(logLines, null, 2), 'utf8');
+    } catch (_) {}
+  }
 }
 
 const MAX_LOG_LINES = 200;
@@ -148,11 +169,23 @@ function isPresensiSuccess(line) {
   if (lower.includes('warn') || lower.includes('error') || lower.includes('info') || lower.includes('debug')) return false;
   if (lower.includes('login') || lower.includes('logout') || lower.includes('keluar')) return false;
   if (lower.includes('tidak ada') || lower.includes('belum ada') || lower.includes('gagal') || lower.includes('skip') || lower.includes('disabled') || lower.includes('tutup')) return false;
+  if (lower.includes('rekapitulasi') || lower.includes('presensi berhasil :') || lower.includes('presensi berhasil:')) return false;
   
   // HANYA terima presensi yang benar-benar berhasil dikonfirmasi atau tercatat hadir
   const hasPresensi = lower.includes('presensi') || lower.includes('kehadiran');
   const hasSuccess = lower.includes('berhasil') || lower.includes('sukses') || lower.includes('tercatat hadir') || lower.includes('telah dilakukan') || clean.includes('✓');
   return hasPresensi && hasSuccess;
+}
+
+function isCriticalError(line) {
+  if (!line) return false;
+  const clean = String(line).replace(/\x1b\[[0-9;]*m/g, '').trim();
+  const lower = clean.toLowerCase();
+  // Tangkap error kritis: timeout, gagal login CAS, connection error, atau tag [ERROR]
+  if (lower.includes('[error]') || lower.includes('timeout') || lower.includes('login cas gagal') || lower.includes('fatal:')) {
+    return true;
+  }
+  return false;
 }
 
 function cleanupExpiredScreenshots(maxAgeMs = 24 * 60 * 60 * 1000) {
@@ -188,7 +221,12 @@ function pushLog(line) {
   // Cetak ke terminal host server untuk observability teknisi/developer
   console.log(`[ETHOL-SERVER] ${clean}`);
 
-  // HANYA simpan ke buffer dan kirim ke konsol output client jika presensi di server berhasil (bukan login, bukan logout)
+  // Broadcast setiap baris proses ke SSE clients (untuk konsol diagnostik & pemicu reload tugas)
+  for (const client of sseClients) {
+    try { client.write(`data: ${JSON.stringify({ ts: Date.now(), text: clean, raw: clean })}\n\n`); } catch {}
+  }
+
+  // HANYA simpan ke buffer linimasa presensi jika presensi di server berhasil (bukan login, bukan logout, bukan warn)
   if (!isPresensiSuccess(clean)) return;
 
   // Ekstrak tag [SCREENSHOT:filename.jpg] jika ada
@@ -264,6 +302,17 @@ function runAgent(args = []) {
   console.log(`\n[SERVER] ▶ Menjalankan auto absen... ${new Date().toLocaleTimeString('id-ID')}`);
 
   const agentPath = getAgentPath();
+  if (!fs.existsSync(agentPath)) {
+    agentRunning = false;
+    const failMsg = '[ERROR] Scraper gagal: Berkas robot scraper (ethol-agent.js) tidak ditemukan.';
+    console.log(`[SERVER] ✖ ${failMsg}`);
+    for (const client of sseClients) {
+      try {
+        client.write(`data: ${JSON.stringify({ ts: Date.now(), text: failMsg, raw: failMsg })}\n\n`);
+      } catch (_) {}
+    }
+    return { ok: false, msg: 'Berkas robot scraper (ethol-agent.js) tidak ditemukan.' };
+  }
   const agentCwd  = path.dirname(agentPath);
   const proc = spawn('node', [agentPath, ...args], { cwd: agentCwd });
 
@@ -274,6 +323,14 @@ function runAgent(args = []) {
     agentRunning  = false;
     lastRunResult = code === 0 ? 'selesai' : 'error';
     console.log(`[SERVER] ■ Agent selesai (exit code: ${code}) — ${new Date().toLocaleTimeString('id-ID')}\n`);
+    if (code !== 0) {
+      const failMsg = `[ERROR] Scraper gagal (exit code: ${code}).`;
+      for (const client of sseClients) {
+        try {
+          client.write(`data: ${JSON.stringify({ ts: Date.now(), text: failMsg, raw: failMsg })}\n\n`);
+        } catch (_) {}
+      }
+    }
     // Jika loop backend sedang aktif, jadwalkan putaran berikutnya secara otomatis
     if (loopActive) {
       scheduleNextLoopRun();
@@ -283,10 +340,74 @@ function runAgent(args = []) {
   proc.on('error', (err) => {
     agentRunning  = false;
     lastRunResult = 'error';
-    console.log(`[SERVER] ✖ Gagal menjalankan node agent: ${err.message}\n`);
+    const failMsg = `[ERROR] Scraper gagal: ${err.message}`;
+    console.log(`[SERVER] ✖ ${failMsg}\n`);
+    for (const client of sseClients) {
+      try {
+        client.write(`data: ${JSON.stringify({ ts: Date.now(), text: failMsg, raw: failMsg })}\n\n`);
+      } catch (_) {}
+    }
   });
 
   return { ok: true, msg: 'Agent dimulai.' };
+}
+
+// ─── Scraper Tugas Kuliah (Notifikasi ➔ Semua ➔ Tugas ➔ Belum Mengumpulkan) ──
+let taskScraperRunning = false;
+
+function runTaskAgent() {
+  if (taskScraperRunning) return { ok: false, msg: 'Scraper tugas sedang berjalan.' };
+  taskScraperRunning = true;
+  console.log(`\n[SERVER] ▶ Menjalankan scraper tugas Ethol... ${new Date().toLocaleTimeString('id-ID')}`);
+
+  const scraperPath = path.join(__dirname, 'ethol-notifier', 'ethol-task-scraper.js');
+  if (!fs.existsSync(scraperPath)) {
+    taskScraperRunning = false;
+    return { ok: false, msg: 'Berkas ethol-task-scraper.js tidak ditemukan.' };
+  }
+
+  const proc = spawn('node', [scraperPath], { cwd: path.dirname(scraperPath) });
+
+  proc.stdout.on('data', (d) => {
+    const raw = d.toString();
+    raw.split('\n').filter(Boolean).forEach(line => {
+      console.log(`[TASK-SCRAPER] ${line}`);
+      for (const client of sseClients) {
+        try {
+          client.write(`data: ${JSON.stringify({ ts: Date.now(), text: `[TUGAS] ${line}`, raw: line })}\n\n`);
+        } catch (_) {}
+      }
+    });
+  });
+
+  proc.stderr.on('data', (d) => {
+    const raw = d.toString();
+    raw.split('\n').filter(Boolean).forEach(line => {
+      console.error(`[TASK-SCRAPER-ERR] ${line}`);
+      for (const client of sseClients) {
+        try {
+          client.write(`data: ${JSON.stringify({ ts: Date.now(), text: `[TUGAS-ERROR] ${line}`, raw: line })}\n\n`);
+        } catch (_) {}
+      }
+    });
+  });
+
+  proc.on('close', (code) => {
+    taskScraperRunning = false;
+    console.log(`[SERVER] ■ Scraper tugas selesai (exit code: ${code})\n`);
+    for (const client of sseClients) {
+      try {
+        client.write(`data: ${JSON.stringify({ ts: Date.now(), text: `[TUGAS] Pemindaian tugas selesai (exit code: ${code}). Memperbarui linimasa tugas...`, raw: 'DONE' })}\n\n`);
+      } catch (_) {}
+    }
+  });
+
+  proc.on('error', (err) => {
+    taskScraperRunning = false;
+    console.error(`[SERVER] ✖ Gagal menjalankan scraper tugas: ${err.message}\n`);
+  });
+
+  return { ok: true, msg: 'Scraper tugas berhasil dimulai di latar belakang.' };
 }
 
 // ─── HTTP Server ──────────────────────────────────────────────────────
@@ -353,7 +474,15 @@ function sendServerHeartbeat() {
 }
 const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
-  const url       = parsedUrl.pathname;
+  let url         = parsedUrl.pathname;
+
+  // ── Auto-Rewrite untuk api.php?path=... agar kompatibel lintas platform ──
+  if (url.includes('api.php')) {
+    const pathParam = parsedUrl.searchParams.get('path');
+    if (pathParam) {
+      url = `/api/absen/${pathParam.replace(/^\/?(?:api\/absen\/)?/, '')}`;
+    }
+  }
 
   // ── CORS Headers (Mendukung permintaan lintas origin / HTTPS) ──
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -433,6 +562,13 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify(data));
   }
 
+  // ── API: Jalankan Scraper Tugas Mandiri ──
+  if ((url === '/api/absen/tugas/run' || url === '/api/tugas/run') && req.method === 'POST') {
+    const result = runTaskAgent();
+    res.writeHead(result.ok ? 200 : 409, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(result));
+  }
+
   // ── API: Mulai Loop Otomatis Server ──
   if (url === '/api/absen/loop/start' && req.method === 'POST') {
     const result = startServerLoop();
@@ -501,6 +637,34 @@ const server = http.createServer((req, res) => {
     saveLogLinesBuffer();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify(logLines));
+  }
+
+  // ── API: Daftar Tangkapan Layar Langkah Presensi (Visual Step Inspector) ──
+  if (url === '/api/absen/steps') {
+    const errorAbsenDir = path.join(__dirname, 'Error_Absen');
+    let steps = [];
+    if (fs.existsSync(errorAbsenDir)) {
+      try {
+        const files = fs.readdirSync(errorAbsenDir);
+        steps = files
+          .filter(f => /\.(jpe?g|png|webp)$/i.test(f))
+          .map(f => {
+            const fp = path.join(errorAbsenDir, f);
+            const stat = fs.statSync(fp);
+            return {
+              file: f,
+              url: `/Error_Absen/${f}`,
+              sizeBytes: stat.size,
+              mtimeMs: stat.mtimeMs,
+              mtimeStr: new Date(stat.mtimeMs).toLocaleString('id-ID')
+            };
+          });
+      } catch (e) {
+        console.warn('[STEPS] Gagal membaca folder Error_Absen:', e.message);
+      }
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ ok: true, steps }));
   }
 
   // ── API: TestSprite Sentinel & Monitoring Suite (Localhost Only) ──

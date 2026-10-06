@@ -13,7 +13,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -37,37 +37,36 @@
   <div class="deck-wrapper">
 
     <!-- ═══════════════════════════════════════
-         NAVBAR / HEADER
+         NAVBAR / HEADER (CLEAN & COMPACT)
     ═══════════════════════════════════════ -->
     <header class="deck-navbar">
       <div class="nav-left">
-        <div class="nav-logo">
+        <div class="nav-logo" title="Ethol Academic Deck">
           <i class="fa-solid fa-graduation-cap"></i>
         </div>
         <div class="nav-title-group">
           <div class="nav-title-row">
             <h1>Ethol Notifier</h1>
-            <span class="nav-version-tag">Executive Deck</span>
+            <span class="nav-version-tag">Ops Deck</span>
           </div>
-          <p class="nav-subtitle">Asisten Presensi Cerdas Ethol PENS</p>
         </div>
       </div>
 
       <div class="nav-right">
-        <!-- Server Connectivity Badge -->
-        <div class="status-chip" id="serverPill">
+        <!-- Server Connectivity Badge (Compact Chip) -->
+        <div class="status-chip" id="serverPill" title="Status Koneksi Server Backend">
           <span class="chip-pulse" id="serverDot"></span>
           <span id="serverLabel" class="chip-text">Memeriksa Server…</span>
         </div>
 
-        <!-- Clock -->
-        <div class="clock-chip">
+        <!-- Clock (Compact Tabular Chip) -->
+        <div class="clock-chip" title="Waktu Sistem Saat Ini">
           <i class="fa-regular fa-clock"></i>
           <span id="topbarClock">00:00:00</span>
         </div>
 
-        <!-- Return to Grimoire -->
-        <a href="../index.html" class="nav-btn-back" title="Kembali ke Katalog Grimoire">
+        <!-- Return to Grimoire (Ergonomic Touch Target) -->
+        <a href="../index.html" class="nav-btn-back" title="Kembali ke Katalog Grimoire Dashboard">
           <i class="fa-solid fa-arrow-left"></i>
           <span>Grimoire</span>
         </a>
@@ -79,12 +78,13 @@
     ═══════════════════════════════════════ -->
     <section class="command-deck" aria-label="Pusat Kendali Presensi">
       
-      <!-- Top Row: Ring Status & Student Summary -->
+      <!-- Top Row: Dominant Status Hero & Student Profile -->
       <div class="deck-top-grid">
         
-        <!-- Status Hub with Circular Radial Countdown -->
+        <!-- Status Hub: Dominant Hero Operational Card -->
         <div class="status-radial-hub" id="statusHubCard">
-          <div class="radial-ring-container">
+          <!-- Large HUD Status Indicator Ring -->
+          <div class="radial-ring-container" aria-hidden="true">
             <svg class="radial-svg" viewBox="0 0 120 120">
               <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
               <circle class="ring-progress" id="radialProgressRing" cx="60" cy="60" r="52"></circle>
@@ -97,51 +97,110 @@
             </div>
           </div>
 
+          <!-- Hero Status Information & Integrated Metrics -->
           <div class="radial-info">
             <div class="hub-status-header">
-              <span class="hub-eyebrow" id="hubEyebrow">Status Operasional</span>
+              <div class="hub-eyebrow-row">
+                <span class="hub-eyebrow" id="hubEyebrow">Status Operasional</span>
+                <span class="hub-status-pill-badge" id="hubStatusPill">Standby</span>
+              </div>
               <h2 class="hub-headline" id="hubHeadline">Sistem Siap Absen</h2>
             </div>
             <p class="hub-desc" id="hubDesc">
               Tekan tombol di bawah untuk memeriksa dan menyelesaikan absensi sekarang, atau aktifkan mode pengawasan loop.
             </p>
+
+            <!-- Integrated Metrics: Eksekusi Terakhir & Hasil -->
             <div class="hub-metrics-row">
               <div class="metric-mini-chip">
-                <i class="fa-solid fa-bolt"></i>
-                <span>Eksekusi Terakhir: <strong id="hubLastRun">—</strong></span>
+                <i class="fa-solid fa-bolt metric-icon"></i>
+                <div class="metric-chip-content">
+                  <span class="metric-chip-lbl">Eksekusi Terakhir</span>
+                  <strong id="hubLastRun" class="metric-chip-val">—</strong>
+                </div>
               </div>
               <div class="metric-mini-chip">
-                <i class="fa-solid fa-circle-check" style="color:var(--ok)"></i>
-                <span>Hasil: <strong id="hubLastResult">Belum ada</strong></span>
+                <i class="fa-solid fa-circle-check metric-icon icon-success"></i>
+                <div class="metric-chip-content">
+                  <span class="metric-chip-lbl">Hasil Terakhir</span>
+                  <strong id="hubLastResult" class="metric-chip-val">Belum ada</strong>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Student Profile & Quick Stat Card -->
-        <div class="student-profile-card">
+        <div class="student-profile-card" id="studentProfileCard">
           <div class="profile-header">
-            <div class="profile-avatar">
-              <i class="fa-solid fa-user-graduate"></i>
+            <div class="profile-avatar-wrap">
+              <div class="profile-avatar-initials" aria-label="Inisial Mahasiswa">RA</div>
+              <span class="profile-online-dot" title="Sesi CAS SSO Terverifikasi"></span>
             </div>
+            
             <div class="profile-meta">
-              <span class="profile-badge"><i class="fa-solid fa-check"></i> CAS SSO Terhubung</span>
-              <h3 class="profile-name">Raden Davino Arya</h3>
-              <span class="profile-id">radenarya@iet.student.pens.ac.id</span>
+              <div class="profile-top-row">
+                <span class="profile-badge">
+                  <i class="fa-solid fa-shield-check"></i>
+                  <span>CAS SSO Terhubung</span>
+                </span>
+                
+                <!-- Privacy Mode Toggle (Eye Icon) -->
+                <button type="button" 
+                        class="profile-privacy-btn" 
+                        id="btnPrivacyToggle" 
+                        onclick="toggleProfilePrivacy()" 
+                        title="Sembunyikan / Tampilkan identitas pribadi" 
+                        aria-label="Toggle privasi nama dan email">
+                  <i class="fa-solid fa-eye" id="privacyIcon"></i>
+                </button>
+              </div>
+
+              <!-- Maskable Identity Fields -->
+              <div class="profile-identity-group" id="profileIdentity">
+                <h3 class="profile-name" id="profileName">Raden Davino Arya</h3>
+                <span class="profile-id" id="profileEmail">radenarya@iet.student.pens.ac.id</span>
+              </div>
+
+              <!-- Target Portal -->
+              <div class="profile-portal-row">
+                <span class="portal-chip">
+                  <i class="fa-solid fa-earth-asia"></i>
+                  <span class="portal-lbl">Portal:</span>
+                  <strong class="portal-val">ethol.pens.ac.id</strong>
+                  <span class="portal-live-indicator" title="Portal Aktif"></span>
+                </span>
+              </div>
             </div>
           </div>
-          <div class="profile-specs">
-            <div class="spec-item">
-              <span class="spec-label">Target Portal</span>
-              <span class="spec-value">ethol.pens.ac.id</span>
+
+          <!-- Bottom: Dua Kartu Mini Statistik Sejajar -->
+          <div class="profile-stats-grid">
+            <!-- Mini Stat 1: Total Presensi 24 Jam -->
+            <div class="stat-mini-card">
+              <div class="stat-mini-head">
+                <div class="stat-mini-icon stat-icon-presensi">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <span class="stat-mini-lbl">Presensi 24 Jam</span>
+              </div>
+              <div class="stat-mini-body">
+                <strong class="stat-mini-val highlight-num" id="statPresensiCount">0</strong>
+                <span class="stat-mini-unit">sesi</span>
+              </div>
             </div>
-            <div class="spec-item">
-              <span class="spec-label">Total Presensi 24 Jam</span>
-              <span class="spec-value highlight-num" id="statPresensiCount">0</span>
-            </div>
-            <div class="spec-item">
-              <span class="spec-label">Tugas Terdekat</span>
-              <span class="spec-value highlight-warn" id="statTaskCount">—</span>
+
+            <!-- Mini Stat 2: Tugas Terdekat -->
+            <div class="stat-mini-card">
+              <div class="stat-mini-head">
+                <div class="stat-mini-icon stat-icon-tugas">
+                  <i class="fa-solid fa-list-check"></i>
+                </div>
+                <span class="stat-mini-lbl">Tugas Terdekat</span>
+              </div>
+              <div class="stat-mini-body">
+                <strong class="stat-mini-val highlight-warn" id="statTaskCount">—</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -151,41 +210,44 @@
       <!-- Bottom Row: Unified Smart Action Dock -->
       <div class="action-dock" id="actionDock">
         <div class="dock-actions-left">
-          <!-- Primary Action: Absen Sekarang -->
+          <!-- Primary Action: Absen Sekarang (Dominant) -->
           <button id="btnRunNow" class="btn-dock btn-dock-primary" onclick="runAbsen()" aria-label="Jalankan Presensi Sekarang">
             <div class="btn-shimmer"></div>
-            <i class="fa-solid fa-play"></i>
-            <div class="btn-dock-text">
-              <span class="btn-main-label">Presensi Instan</span>
-              <span class="btn-sub-label">Jalankan verifikasi sekarang</span>
+            <div class="btn-icon-box">
+              <i class="fa-solid fa-bolt-lightning"></i>
             </div>
-            <kbd class="shortcut-chip">Ctrl+R</kbd>
+            <div class="btn-dock-text">
+              <div class="btn-main-row">
+                <span class="btn-main-label">Presensi Instan</span>
+                <kbd class="shortcut-chip" title="Pintasan Keyboard">Ctrl+R</kbd>
+              </div>
+              <span class="btn-sub-label">Jalankan verifikasi kelas sekarang</span>
+            </div>
           </button>
 
-          <!-- Toggle Loop Mode -->
+          <!-- Secondary Action 1: Toggle Loop Mode -->
           <button id="btnToggleLoop" class="btn-dock btn-dock-loop" onclick="toggleLoopMode()" aria-label="Toggle Pengawasan Loop">
-            <i class="fa-solid fa-arrows-rotate" id="loopIcon"></i>
-            <div class="btn-dock-text">
-              <span class="btn-main-label" id="loopBtnLabel">Mulai Loop Otomatis</span>
-              <span class="btn-sub-label" id="loopBtnSub">Interval acak 3-5 menit</span>
+            <div class="btn-icon-box loop-icon-box">
+              <i class="fa-solid fa-arrows-rotate" id="loopIcon"></i>
             </div>
-          </button>
-
-          <!-- Test Screenshot Proof -->
-          <button id="btnTestScreenshot" class="btn-dock btn-dock-secondary" onclick="testPresensiStream()" aria-label="Uji Bukti Kamera">
-            <i class="fa-solid fa-camera"></i>
             <div class="btn-dock-text">
-              <span class="btn-main-label">Audit Bukti Kamera</span>
-              <span class="btn-sub-label">Ambil tangkapan layar simulasi</span>
+              <div class="btn-main-row">
+                <span class="btn-main-label" id="loopBtnLabel">Mulai Loop Otomatis</span>
+                <span class="loop-live-tag" id="loopLiveTag">
+                  <span class="loop-live-dot"></span>
+                  <span>AKTIF</span>
+                </span>
+              </div>
+              <span class="btn-sub-label" id="loopBtnSub">Interval acak 3-5 menit</span>
             </div>
           </button>
         </div>
 
         <div class="dock-actions-right">
-          <button class="btn-icon-soft" onclick="clearConsole()" title="Bersihkan Catatan Presensi">
+          <button class="btn-icon-soft" onclick="clearConsole()" title="Bersihkan Catatan Presensi & Log" aria-label="Bersihkan Catatan Presensi">
             <i class="fa-solid fa-trash-can"></i>
           </button>
-          <button class="btn-icon-soft" onclick="loadTasks()" title="Segarkan Tugas">
+          <button class="btn-icon-soft" onclick="loadTasks()" title="Segarkan Data Tugas & Jadwal" aria-label="Segarkan Tugas">
             <i class="fa-solid fa-rotate"></i>
           </button>
         </div>
@@ -216,15 +278,32 @@
           <!-- Empty State (Default) -->
           <div class="timeline-empty" id="timelineEmpty">
             <div class="empty-icon-ring">
-              <i class="fa-solid fa-graduation-cap"></i>
+              <i class="fa-solid fa-calendar-check"></i>
             </div>
-            <h3>Belum Ada Presensi Tercatat</h3>
+            <h3>Belum Ada Presensi Hari Ini</h3>
             <p>
-              Saat jadwal kuliah Anda dibuka dan sistem berhasil melakukan absensi di Ethol, kartu bukti kehadiran akan langsung muncul di linimasa ini.
+              Presensi otomatis akan terekam di sini begitu jadwal kelas Anda aktif dan terverifikasi di portal Ethol PENS.
             </p>
-            <div class="empty-hint">
-              <i class="fa-solid fa-shield-check"></i>
-              <span>Tekan <strong>Presensi Instan</strong> untuk memeriksa kelas saat ini</span>
+            <div class="empty-steps-box">
+              <span class="empty-steps-title"><i class="fa-solid fa-compass"></i> Langkah Cepat Selanjutnya:</span>
+              <div class="empty-steps-grid">
+                <div class="empty-step-item" onclick="runAbsen()" role="button" tabindex="0" title="Klik untuk verifikasi sekarang">
+                  <div class="step-num">1</div>
+                  <div class="step-desc">
+                    <strong>Presensi Instan (Ctrl+R)</strong>
+                    <span>Pindai jadwal dan konfirmasi kehadiran kelas sekarang</span>
+                  </div>
+                  <i class="fa-solid fa-chevron-right step-arrow"></i>
+                </div>
+                <div class="empty-step-item" onclick="toggleLoopMode()" role="button" tabindex="0" title="Klik untuk aktifkan pengawasan otomatis">
+                  <div class="step-num">2</div>
+                  <div class="step-desc">
+                    <strong>Aktifkan Loop Otomatis</strong>
+                    <span>Sistem memantau dan absen mandiri tiap 3–5 menit</span>
+                  </div>
+                  <i class="fa-solid fa-chevron-right step-arrow"></i>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -239,14 +318,37 @@
             <span class="count-pill pill-warn" id="taskCountBadge">Memuat…</span>
           </div>
           <div class="panel-head-actions">
-            <span class="retention-hint"><i class="fa-solid fa-bell"></i> Deadline ≤ 5 Hari</span>
+            <span class="retention-hint"><i class="fa-solid fa-list-check"></i> Tugas Baru ≤ 1 Minggu (Belum Kumpul)</span>
           </div>
         </div>
 
         <div class="task-list-wrapper" id="taskListContainer">
-          <div class="task-loading">
-            <i class="fa-solid fa-circle-notch fa-spin"></i>
-            <span>Memeriksa daftar tugas Ethol…</span>
+          <!-- Loading Skeleton (Automatically replaced once tasks are loaded) -->
+          <div class="task-skeleton-list" id="taskSkeleton">
+            <div class="task-card-skeleton">
+              <div class="sk-head">
+                <div class="sk-bone sk-course"></div>
+                <div class="sk-bone sk-badge"></div>
+              </div>
+              <div class="sk-bone sk-title"></div>
+              <div class="sk-bone sk-deadline"></div>
+              <div class="sk-foot">
+                <div class="sk-bone sk-meta"></div>
+                <div class="sk-bone sk-status"></div>
+              </div>
+            </div>
+            <div class="task-card-skeleton">
+              <div class="sk-head">
+                <div class="sk-bone sk-course" style="width: 38%;"></div>
+                <div class="sk-bone sk-badge"></div>
+              </div>
+              <div class="sk-bone sk-title" style="width: 75%;"></div>
+              <div class="sk-bone sk-deadline" style="width: 60%;"></div>
+              <div class="sk-foot">
+                <div class="sk-bone sk-meta"></div>
+                <div class="sk-bone sk-status"></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -257,32 +359,58 @@
          COLLAPSIBLE DIAGNOSTIC CONSOLE TRAY
     ═══════════════════════════════════════ -->
     <section class="diagnostic-tray" id="diagnosticTray">
-      <div class="tray-header" onclick="toggleDiagnosticsTray()" title="Klik untuk membuka/menutup log server">
+      <div class="tray-header" onclick="toggleDiagnosticsTray()" title="Klik untuk membuka / menutup log server">
         <div class="tray-title-group">
-          <i class="fa-solid fa-terminal tray-icon"></i>
-          <span class="tray-title">Log Diagnostik Server</span>
+          <div class="tray-icon-box">
+            <i class="fa-solid fa-terminal tray-icon"></i>
+          </div>
+          <span class="tray-title">Log Diagnostik <span class="tray-title-sub">Server</span></span>
+          
           <div class="tray-live-tag">
             <span class="tray-live-dot"></span>
             <span>STREAM LIVE</span>
           </div>
-          <span class="tray-item-counter" id="trayLogCounter">0 pesan</span>
+
+          <span class="tray-item-counter" id="trayLogCounter">0 entri</span>
         </div>
+
+        <!-- Segmented Control Filters (Presensi / Loop / Semua) -->
+        <div class="tray-filter-wrapper" onclick="event.stopPropagation()">
+          <div class="log-segmented-control" role="tablist" aria-label="Filter Log Diagnostik">
+            <button type="button" class="log-segment active" data-filter="all" onclick="filterConsoleLogs('all', this)" role="tab" aria-selected="true">Semua</button>
+            <button type="button" class="log-segment" data-filter="presensi" onclick="filterConsoleLogs('presensi', this)" role="tab" aria-selected="false"><i class="fa-solid fa-calendar-check"></i> Presensi</button>
+            <button type="button" class="log-segment" data-filter="loop" onclick="filterConsoleLogs('loop', this)" role="tab" aria-selected="false"><i class="fa-solid fa-arrows-rotate"></i> Loop</button>
+          </div>
+        </div>
+
+        <!-- Actions: Copy, Clear, Toggle -->
         <div class="tray-controls" onclick="event.stopPropagation()">
-          <button class="tray-btn-action" onclick="clearConsole()" title="Bersihkan log">
+          <button class="tray-btn-action" onclick="copyConsoleLogs()" title="Salin seluruh log ke clipboard" aria-label="Salin Log">
+            <i class="fa-solid fa-copy"></i>
+          </button>
+          <button class="tray-btn-action" onclick="clearConsole()" title="Bersihkan riwayat log" aria-label="Bersihkan Log">
             <i class="fa-solid fa-trash-can"></i>
           </button>
-          <button class="tray-btn-toggle" onclick="toggleDiagnosticsTray()" id="btnToggleTray" title="Buka / Tutup">
+          <button class="tray-btn-toggle" onclick="toggleDiagnosticsTray()" id="btnToggleTray" title="Buka / Tutup Panel" aria-label="Toggle Panel">
             <i class="fa-solid fa-chevron-up" id="trayChevron"></i>
           </button>
         </div>
       </div>
 
       <div class="tray-body" id="trayBody">
-        <div class="console-screen" id="consoleScreen">
-          <div class="console-empty" id="consoleWelcome">
-            <div class="empty-glow-ring"><i class="fa-solid fa-code"></i></div>
-            <p>Log aktivitas backend dan rincian HTTP request akan terekam di sini secara langsung.</p>
+        <div class="console-screen-wrapper">
+          <div class="console-screen" id="consoleScreen" onscroll="handleConsoleScroll(this)">
+            <div class="console-empty" id="consoleWelcome">
+              <div class="empty-glow-ring"><i class="fa-solid fa-code"></i></div>
+              <p>Log aktivitas backend dan rincian HTTP request akan terekam di sini secara langsung.</p>
+            </div>
           </div>
+          
+          <!-- Floating Scroll-To-Bottom Button -->
+          <button type="button" class="btn-scroll-bottom" id="btnScrollBottom" onclick="scrollConsoleToBottom()" title="Gulir ke log paling baru">
+            <i class="fa-solid fa-arrow-down"></i>
+            <span>Ke Bawah</span>
+          </button>
         </div>
       </div>
     </section>
@@ -293,18 +421,15 @@
        MOBILE BOTTOM STICKY ACTION BAR
   ═══════════════════════════════════════ -->
   <aside class="mobile-action-bar" aria-label="Aksi Cepat Mobile">
-    <button class="mobile-btn-primary" onclick="runAbsen()">
-      <i class="fa-solid fa-play"></i>
+    <button class="mobile-btn-primary" id="mobileBtnRun" onclick="runAbsen()" aria-label="Presensi Instan Sekarang">
+      <i class="fa-solid fa-bolt-lightning"></i>
       <span>Presensi</span>
     </button>
-    <button class="mobile-btn-loop" id="mobileBtnLoop" onclick="toggleLoopMode()">
+    <button class="mobile-btn-loop" id="mobileBtnLoop" onclick="toggleLoopMode()" aria-label="Toggle Mode Loop">
       <i class="fa-solid fa-arrows-rotate" id="mobileLoopIcon"></i>
       <span id="mobileLoopText">Loop</span>
     </button>
-    <button class="mobile-btn-aux" onclick="testPresensiStream()" title="Uji Screenshot">
-      <i class="fa-solid fa-camera"></i>
-    </button>
-    <button class="mobile-btn-aux" onclick="toggleDiagnosticsTray()" title="Buka Konsol">
+    <button class="mobile-btn-aux" onclick="toggleDiagnosticsTray()" title="Buka Konsol Diagnostik" aria-label="Buka Konsol">
       <i class="fa-solid fa-terminal"></i>
     </button>
   </aside>
@@ -313,32 +438,206 @@
   <div class="toast-wrap" id="toastContainer"></div>
 
   <!-- Modal Lightbox Screenshot Proof -->
-  <div class="modal-backdrop" id="screenshotModal" style="display:none;" onclick="closeScreenshotModal(event)">
+  <div class="modal-backdrop" id="screenshotModal" style="display:none;" onclick="closeScreenshotModal(event)" role="dialog" aria-modal="true" aria-labelledby="modalSsTitle" aria-describedby="modalSsSubtitle" tabindex="-1">
     <div class="modal-dialog" onclick="event.stopPropagation()">
       <div class="modal-head">
         <div class="modal-title-group">
-          <i class="fa-solid fa-camera-retro"></i>
-          <div>
+          <div class="modal-icon-badge">
+            <i class="fa-solid fa-camera-retro"></i>
+          </div>
+          <div class="modal-title-text">
             <h3 id="modalSsTitle">Bukti Layar Presensi</h3>
             <span id="modalSsSubtitle" class="modal-sub">—</span>
           </div>
         </div>
-        <button class="btn-close-modal" onclick="closeScreenshotModal()" title="Tutup">
+        <button class="btn-close-modal" id="modalCloseBtn" onclick="closeScreenshotModal()" title="Tutup Modal (Esc)" aria-label="Tutup modal bukti layar">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="modal-body">
-        <img id="modalSsImage" src="" alt="Bukti Presensi Ethol" />
+        <div class="modal-image-wrapper">
+          <img id="modalSsImage" src="" alt="Bukti Presensi Ethol" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='screenshots/presensi_sample.jpg';}" loading="lazy" />
+        </div>
       </div>
       <div class="modal-foot">
-        <span class="modal-foot-badge"><i class="fa-solid fa-shield-halved"></i> Terverifikasi Server Ethol</span>
-        <span class="modal-foot-timer"><i class="fa-regular fa-clock"></i> Tersimpan selama 24 jam</span>
+        <div class="modal-foot-left">
+          <span class="modal-foot-badge badge-verified">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Terverifikasi Server Ethol</span>
+          </span>
+        </div>
+        <div class="modal-foot-right">
+          <span class="modal-foot-badge badge-retention">
+            <i class="fa-regular fa-clock"></i>
+            <span>Masa Simpan: 24 Jam</span>
+          </span>
+        </div>
       </div>
     </div>
   </div>
 
   <script src="ethol.js?v=20260928_deck_v3"></script>
   <script>
+    function toggleProfilePrivacy() {
+      const card = document.getElementById('studentProfileCard');
+      const icon = document.getElementById('privacyIcon');
+      if (!card) return;
+      const isMasked = card.classList.toggle('privacy-masked');
+      if (icon) {
+        icon.className = isMasked ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+      }
+      try {
+        localStorage.setItem('ethol_privacy_masked', isMasked ? '1' : '0');
+      } catch (e) {}
+    }
+
+    // Auto-restore saved privacy state
+    (function initPrivacyState() {
+      try {
+        if (localStorage.getItem('ethol_privacy_masked') === '1') {
+          const card = document.getElementById('studentProfileCard');
+          const icon = document.getElementById('privacyIcon');
+          if (card) card.classList.add('privacy-masked');
+          if (icon) icon.className = 'fa-solid fa-eye-slash';
+        }
+      } catch (e) {}
+    })();
+
+    // Filter Console Logs (Segmented Control: Semua / Presensi / Loop)
+    function filterConsoleLogs(filter, btn) {
+      const screen = document.getElementById('consoleScreen');
+      if (!screen) return;
+      screen.classList.remove('filter-all', 'filter-presensi', 'filter-loop');
+      screen.classList.add(`filter-${filter}`);
+
+      const buttons = document.querySelectorAll('.log-segmented-control .log-segment');
+      buttons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      if (btn) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+      }
+    }
+
+    // Scroll Console to Bottom Smoothly
+    function scrollConsoleToBottom() {
+      const screen = document.getElementById('consoleScreen');
+      if (screen) {
+        screen.scrollTo({ top: screen.scrollHeight, behavior: 'smooth' });
+      }
+      const scrollBtn = document.getElementById('btnScrollBottom');
+      if (scrollBtn) scrollBtn.classList.remove('visible');
+    }
+
+    // Console Scroll Event Listener for Floating "Ke Bawah" Button
+    function handleConsoleScroll(el) {
+      const scrollBtn = document.getElementById('btnScrollBottom');
+      if (!scrollBtn) return;
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distFromBottom > 45) {
+        scrollBtn.classList.add('visible');
+      } else {
+        scrollBtn.classList.remove('visible');
+      }
+    }
+
+    // Copy Console Logs to Clipboard
+    function copyConsoleLogs() {
+      const screen = document.getElementById('consoleScreen');
+      const lines = screen ? screen.querySelectorAll('.log-line') : [];
+      if (!lines || lines.length === 0) {
+        if (typeof showToast === 'function') showToast('Belum ada log diagnostik untuk disalin.', 'info');
+        return;
+      }
+      const text = Array.from(lines).map(l => l.innerText.trim()).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        if (typeof showToast === 'function') showToast('Seluruh log diagnostik berhasil disalin ke clipboard!', 'success');
+      }).catch(() => {
+        if (typeof showToast === 'function') showToast('Gagal menyalin log ke clipboard.', 'error');
+      });
+    }
+
+    // Passive Log Decorator Observer (Tags channel and level for colors & filters)
+    (function initLogDecorator() {
+      const screen = document.getElementById('consoleScreen');
+      if (!screen) return;
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+          m.addedNodes.forEach(node => {
+            if (node.nodeType === 1) {
+              const lines = node.classList.contains('log-line') ? [node] : node.querySelectorAll('.log-line');
+              lines.forEach(l => {
+                const text = (l.textContent || '').toLowerCase();
+                if (text.includes('loop')) l.dataset.channel = 'loop';
+                else if (text.includes('presensi') || text.includes('absen') || text.includes('kuliah') || text.includes('jadwal')) l.dataset.channel = 'presensi';
+                else l.dataset.channel = 'all';
+
+                if (text.includes('[error]') || text.includes('gagal') || text.includes('timeout') || text.includes('fatal:')) {
+                  l.classList.add('log-error');
+                } else if (text.includes('berhasil') || text.includes('sukses') || text.includes('[success]') || text.includes('tercatat')) {
+                  l.classList.add('log-success');
+                } else if (text.includes('warning') || text.includes('[warn]') || text.includes('peringatan') || text.includes('ditinggal')) {
+                  l.classList.add('log-warn');
+                } else {
+                  l.classList.add('log-info');
+                }
+              });
+            }
+          });
+        });
+      });
+      observer.observe(screen, { childList: true, subtree: true });
+    })();
+
+    // Accessible Focus Trap & Return-Focus System for Screenshot Modal
+    (function initModalFocusTrap() {
+      let lastActiveEl = null;
+      let wasOpen = false;
+      const modal = document.getElementById('screenshotModal');
+      if (!modal) return;
+
+      const observer = new MutationObserver(() => {
+        const isShown = modal.style.display !== 'none' && modal.style.display !== '';
+        if (isShown && !wasOpen) {
+          wasOpen = true;
+          lastActiveEl = document.activeElement;
+          modal.classList.add('is-open');
+          const closeBtn = document.getElementById('modalCloseBtn');
+          if (closeBtn) closeBtn.focus();
+        } else if (!isShown && wasOpen) {
+          wasOpen = false;
+          modal.classList.remove('is-open');
+          if (lastActiveEl && typeof lastActiveEl.focus === 'function') {
+            lastActiveEl.focus();
+          }
+        }
+      });
+      observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+
+      // Trap Tab & Shift+Tab within modal elements
+      modal.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          const focusable = modal.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      });
+    })();
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(() => {});

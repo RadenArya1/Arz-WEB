@@ -57,11 +57,19 @@ Arz-WEB/
 │   ├── DOKUMENTASI_PERBAIKAN_TESTSPRITE.md # Laporan Komparasi Sebelum vs Sesudah Perbaikan Uji
 │   └── tmp/                             # Direktori Kerja Sementara, Test Scripts (.py), & Log Eksekusi
 │
+├── lab/                                 # FOLDER MANDIRI SANDBOX: Eksklusif Localhost & Modul Eksperimental
+│   ├── index.html                       # Landing Hub Sandbox Laboratorium
+│   └── proses-absen/                    # FITUR: Visual Absen Inspector (Step-by-Step Viewer Absensi Ethol)
+│       ├── index.html                   # Halaman visualisasi kanvas ambient & timeline observasi
+│       ├── proses-absen.css             # Styling cyber-arcane, mobile touch-friendly, dynamic viewport
+│       └── proses-absen.js              # Controller canonical steps, step simulator, lightbox screenshot
+│
 ├── ethol-notifier/                      # FOLDER MANDIRI: Ethol Academic Notifier (Auto Absen & Tugas)
 │   ├── index.html                       # Entry Point Mandiri Ethol Notifier
 │   ├── ethol.css                        # Styling dashboard glassmorphism, KPI cards, filter log, status badges
 │   ├── ethol.js                         # Controller antarmuka (Self-Healing Gateway, failover, status & widget tugas)
 │   ├── ethol-agent.js                   # Automasi headless Puppeteer (SSO CAS PENS, auto presensi & scraper tugas)
+│   ├── ethol-task-scraper.js            # Scraper mandiri penugasan perkuliahan portal ETHOL PENS
 │   ├── api.php                          # Self-Healing Gateway Server (Node Health Cache, auto-failover <10ms)
 │   ├── tasks.json                       # Cache data tugas kuliah mendekati deadline (≤ 5 hari)
 │   ├── logs_buffer.json                 # Salinan buffer persisten log presensi subfolder ethol-notifier
@@ -420,12 +428,20 @@ Modul automasi akademik mandiri (**Ethol Academic Notifier**) beroperasi sebagai
 - **Pencegahan Redundansi Notifikasi & Chime**: Sinkronisasi berkala (`syncLogs()`) setiap 1.5 detik dan rekoneksi SSE stream tidak lagi membunyikan *magic chime* atau memicu notifikasi push ganda pada data presensi yang sudah tertampil di layar.
 - **Deduplikasi Server Buffer & FastCGI Gateway**: Buffer `logs_buffer.json` saat start server dan pemanggilan `pushLog()` pada `serve.js`, serta gateway `api.php`, secara proaktif menyaring catatan presensi duplikat sebelum disiarkan ke client.
 
+### 10. Modul Visual Absen Inspector (`lab/proses-absen/`) & Scraper Tugas Mandiri
+- **Platform Observasi Visual Step-by-Step**: Lingkungan laboratorium interaktif di `lab/proses-absen/` untuk memantau alur automasi presensi Ethol secara komprehensif mulai dari gateway CAS login, pengisian kredensial, handshake sesi, navigasi lonceng, filter presensi 24 jam, klik tombol presensi, hingga histori tangkapan layar.
+- **Spesifikasi Teknis per Langkah**: Menyajikan informasi aksi Puppeteer, selektor target, estimasi latensi/delay, checklist verifikasi, dan mockup referensi URL pada setiap tahap proses.
+- **Simulator Langkah & Modal Lightbox**: Memungkinkan pengujian simulasi alur absensi langkah demi langkah, inspeksi gambar bukti layar penuh, dan kanvas ambient dynamic background.
+- **Scraper Tugas Akademik Mandiri (`ethol-task-scraper.js`)**: Engine mandiri yang bertugas mengumpulkan penugasan kuliah dari portal ETHOL PENS dengan batas filter tenggat ≤ 5 hari, terisolasi dan sinkron dengan `tasks.json`.
+- **Integrasi Katalog Proyek**: Shortcut ubin `Visual Absen Inspector` didaftarkan secara resmi di Grimoire Dashboard (`src/proyek/proyek.js`) dengan ikon unik `fa-binoculars`, status `active`, dan bump storage key katalog ke `v13`.
+
 ---
 
 ## BAGIAN V: LOG RIWAYAT PEMBARUAN & PROGRES IMPLEMENTASI
 
 | Tanggal | Fitur / Komponen | Ringkasan Pembaruan |
 | :--- | :--- | :--- |
+| **06 Okt 2026** | **Pengembangan Visual Absen Inspector, Scraper Tugas Mandiri, & Optimasi UI Android-Fit** | (1) Membangun modul laboratorium baru *Visual Absen Inspector* di `lab/proses-absen/` (`index.html`, `proses-absen.css`, `proses-absen.js`) sebagai platform observasi visual alur presensi Ethol (login CAS, pengisian form, validasi sesi, panel lonceng, filter 24 jam, klik kehadiran, dan rekaman screenshot) lengkap dengan kartu detail teknis per-langkah dan simulator interaktif, (2) Menambahkan shortcut ubin resmi `Visual Absen Inspector` (`fa-binoculars`, status `active`) ke Katalog Proyek Grimoire Dashboard (`src/proyek/proyek.js`), (3) Mengembangkan scraper mandiri penugasan perkuliahan `ethol-notifier/ethol-task-scraper.js` untuk pemantauan tugas ≤ 5 hari, (4) Mengaudit dan mengoptimalkan kepatuhan standar Android-Fit (dynamic viewport 100dvh, safe area insets, touch-action manipulation, target sentuh 48dp) pada seluruh antarmuka web ekosistem (`ethol-notifier`, `keuangan.html`, `lab/proses-absen/`), serta (5) Memperbarui routing static server `serve.js` untuk dukungan inspector dan direktori screenshot `/Error_Absen/`. |
 | **30 Sep 2026** | **Penyempurnaan Konsol Notifikasi Web: Filter Presensi Berhasil Murni & Sanitasi Buffer** | Memperketat filter presensi pada konsol web Grimoire Dashboard (`src/konsol/konsol.js`), backend server (`serve.js`), dan FastCGI gateway (`api.php`) dengan `isPresensiSuccess()`: mengeliminasi false-positive peringatan ketiadaan sesi ("Tidak ada sesi presensi yang berhasil diproses"), membersihkan buffer log persisten, migrasi storage key ke v5 (`grimoire_console_logs_ethol_sukses_v5`), dan penyematan cache-buster `?v=20260930_presensi_sukses_v5`. |
 | **27 Sep 2026** | **Integrasi Dual-Suite Test Runner (Pilihan Frontend & Backend) & Suite Pengujian API** | Memperluas kapabilitas website pemantau TestSprite Sentinel dengan arsitektur pengujian ganda (Frontend & Backend): (1) Mengubah tombol *Jalankan Pengujian* menjadi modal interaktif dengan 3 opsi: *Frontend Suite* (21 TC UI Playwright), *Backend Suite* (9 BT REST API Node.js), dan *Full-Stack Suite* (eksekusi berurutan), (2) Mengembangkan engine `testsprite_tests/backend_runner.js` yang menguji endpoint server, liveness health, telemetri, isolasi buffer presensi 24 jam, brankas 15 akun, dan koneksi cloud API, (3) Menambahkan sub-navigation tab switcher pada antarmuka *Kasus Pengujian* untuk inspeksi terpisah antara skenario Frontend dan Backend lengkap dengan status kelulusan dan latensi respons (ms), (4) Memperbarui runner `testsprite-runner.js` (`runFrontend`, `runBackend`, `runAll`) dan endpoint server `serve.js` (`POST /api/testsprite/run` dan `GET /api/testsprite/backend-tests`). |
 | **27 Sep 2026** | **Pembangunan Website Pemantau TestSprite Sentinel (Localhost Hub, Saldo Token, & Runner)** | Merancang dan membangun website mandiri pemantau otonom TestSprite eksklusif dev localhost (port 8080): (1) Membuat antarmuka modern glassmorphic di `testsprite_tests/index.html`, `monitor.css`, dan `monitor.js` dengan 4 kartu KPI eksekutif (sisa token, akun aktif, jadwal pemulihan kuota, dan skor kelulusan tes), (2) Menampilkan brankas 15 akun token dengan fitur 1-klik switch akun aktif dan live balance sync ke TestSprite Cloud API, (3) Menampilkan 21 skenario uji (TC001-TC021) dengan filter kelulusan, modal inspeksi kode Playwright Python, dan modal pemutar video rekaman uji AWS S3, (4) Menghubungkan live SSE stream terminal console untuk memantau eksekusi Playwright secara real-time, (5) Menambahkan endpoint backend pendukung di `serve.js` (`/api/testsprite/*`), serta (6) Mendaftarkan shortcut resmi `TestSprite Sentinel Hub` (`fa-vial-circle-check`) pada katalog proyek Grimoire Dashboard (`src/proyek/proyek.js`). |

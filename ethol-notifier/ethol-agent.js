@@ -1,28 +1,11 @@
-/**
- * ============================================================
- *  ETHOL ACADEMIC NOTIFIER — Auto Absen Agent
- *  src/ethol/ethol-agent.js
- * ============================================================
- *  Automasi presensi di ethol.pens.ac.id via Puppeteer.
- *
- *  Alur:
- *    1. Buka https://ethol.pens.ac.id/
- *    2. Klik Login → pilih opsi SSO (Dosen/Staff/Mahasiswa)
- *    3. Isi form di halaman CAS PENS (login.pens.ac.id)
- *    4. Setelah login, klik ikon notifikasi bell
- *    5. Dalam panel "Pemberitahuan", cari item "PRESENSI KULIAH"
- *    6. Klik setiap item presensi → halaman matakuliah terbuka
- *    7. Klik tombol Presensi jika aktif (tidak disabled)
- *    8. Laporan sukses/gagal/tidak ada ke konsol
- *
- *  Penggunaan:
- *    node src/ethol/ethol-agent.js           (headless)
- *    node src/ethol/ethol-agent.js --show    (tampilkan browser)
- *    node src/ethol/ethol-agent.js --debug   (verbose log)
- *
- *  Dependencies: puppeteer (npm install puppeteer)
- * ============================================================
- */
+/* ============================================================
+   ETHOL ACADEMIC NOTIFIER — ROBOT ENGINE TERPADU
+   Fungsi Terpadu dalam Sekali Eksekusi "Presensi Instan":
+   1. Autentikasi CAS SSO (Jeda Pengaman 3 Detik)
+   2. Presensi Otomatis (< 24 Jam) + Screenshot Bukti Riwayat
+   3. Pemindaian Tugas Baru (<= 1 Minggu) Yang Belum Mengumpulkan
+   4. Penyimpanan Histori & Pembaruan Linimasa Otomatis
+   ============================================================ */
 
 'use strict';
 
@@ -30,1006 +13,1057 @@ const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 
-// ─────────────────────────── KONFIGURASI ────────────────────────────
-// Muat kredensial dari ethol-config.json (terlindungi di .gitignore) atau env variables
-let localCreds = {};
-const credsPath = path.join(__dirname, 'ethol-config.json');
-if (fs.existsSync(credsPath)) {
-  try {
-    localCreds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
-  } catch (e) {}
-}
-
+// ─── KONFIGURASI ENGINE ─────────────────────────────────────
 const CONFIG = {
-  username: process.env.ETHOL_USERNAME || localCreds.username || 'user@student.pens.ac.id',
-  password: process.env.ETHOL_PASSWORD || localCreds.password || '',
-  baseUrl:  'https://ethol.pens.ac.id/',
-  casUrl:   'https://login.pens.ac.id/cas/login?service=https%3A%2F%2Fethol.pens.ac.id%2Fapi%2Fauth%2Fcas-callback',
-
-  // Timeout (ms)
-  navTimeout:  30000,
-  elemTimeout: 10000,
-  afterClick:   3000,
-  shortWait:    1500,
+  baseUrl: 'https://ethol.pens.ac.id/',
+  casUrl: 'https://ethol.pens.ac.id/cas/login',
+  shortWait: 1500,
+  actionDelay: 2000,
+  casWaitSec: 3, // Jeda stabilisasi 3 detik sesuai protokol
+  navTimeout: 35000,
+  elemTimeout: 12000,
 };
 
-// ─────────────────────────── LOGGER ─────────────────────────────────
+// ─── LOGGING SYSTEM (Master Humanizer Formatting) ───────────
 const C = {
-  reset:   '\x1b[0m',
-  bold:    '\x1b[1m',
-  cyan:    '\x1b[36m',
-  green:   '\x1b[32m',
-  yellow:  '\x1b[33m',
-  red:     '\x1b[31m',
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  gray: '\x1b[90m',
   magenta: '\x1b[35m',
-  gray:    '\x1b[90m',
 };
-
-const ts = () => new Date().toLocaleTimeString('id-ID', { hour12: false });
 
 const log = {
-  info:    (msg) => console.log(`${C.gray}[${ts()}]${C.reset} ${C.cyan}[INFO]${C.reset}    ${msg}`),
-  success: (msg) => console.log(`${C.gray}[${ts()}]${C.reset} ${C.green}${C.bold}[SUKSES]${C.reset}  ${msg}`),
-  warn:    (msg) => console.log(`${C.gray}[${ts()}]${C.reset} ${C.yellow}[WARN]${C.reset}    ${msg}`),
-  error:   (msg) => console.log(`${C.gray}[${ts()}]${C.reset} ${C.red}${C.bold}[ERROR]${C.reset}   ${msg}`),
-  step:    (n, msg) => console.log(`\n${C.magenta}${C.bold}  ● Step ${n}${C.reset}${C.magenta} │ ${msg}${C.reset}`),
-  divider: () => console.log(`${C.gray}${'─'.repeat(60)}${C.reset}`),
-  banner:  () => {
-    console.log(`\n${C.cyan}${C.bold}`);
-    console.log(`  ╔══════════════════════════════════════════════╗`);
-    console.log(`  ║    ETHOL ACADEMIC NOTIFIER - Auto Absen      ║`);
-    console.log(`  ║      by Arz-WEB Grimoire Ecosystem            ║`);
-    console.log(`  ╚══════════════════════════════════════════════╝`);
-    console.log(`${C.reset}`);
-  },
+  info: (msg) => console.log(`${C.cyan}[INFO]${C.reset} ${msg}`),
+  step: (num, title) => console.log(`\n${C.bold}${C.magenta}[LANGKAH ${num}]${C.reset} ${C.bold}${title}${C.reset}`),
+  success: (msg) => console.log(`${C.green}[SUKSES]${C.reset} ${msg}`),
+  warn: (msg) => console.log(`${C.yellow}[PERINGATAN]${C.reset} ${msg}`),
+  error: (msg) => console.error(`${C.red}[ERROR]${C.reset} ${msg}`),
+  divider: () => console.log(`${C.gray}───────────────────────────────────────────────────${C.reset}`),
 };
 
-// ─────────────────────── HELPERS ────────────────────────────────────
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function cleanupExpiredScreenshots(maxAgeMs = 24 * 60 * 60 * 1000) {
-  try {
-    const dir = path.join(__dirname, 'screenshots');
-    if (!fs.existsSync(dir)) return;
-    const now = Date.now();
-    const files = fs.readdirSync(dir);
-    for (const f of files) {
-      if (f === 'presensi_sample.jpg') continue; // pertahankan template sample
-      const fp = path.join(dir, f);
+// ─── AMBIL KREDENSIAL LOGIN ─────────────────────────────────
+function loadCredentials() {
+  const candidatePaths = [
+    path.join(__dirname, 'ethol-config.json'),
+    path.join(__dirname, '..', 'ethol-notifier', 'ethol-config.json'),
+    path.join(process.cwd(), 'ethol-notifier', 'ethol-config.json'),
+    path.join(process.cwd(), 'ethol-config.json'),
+  ];
+
+  for (const cp of candidatePaths) {
+    if (fs.existsSync(cp)) {
       try {
-        const stat = fs.statSync(fp);
-        if (now - stat.mtimeMs > maxAgeMs) {
-          fs.unlinkSync(fp);
-          log.info(`[CLEANUP] Screenshot kedaluwarsa dibersihkan (> 24 jam): ${f}`);
+        const raw = fs.readFileSync(cp, 'utf8');
+        const data = JSON.parse(raw);
+        if (data.username && data.password) {
+          return { username: data.username.trim(), password: data.password.trim() };
         }
       } catch (_) {}
     }
+  }
+
+  if (process.env.ETHOL_USER && process.env.ETHOL_PASS) {
+    return { username: process.env.ETHOL_USER.trim(), password: process.env.ETHOL_PASS.trim() };
+  }
+
+  throw new Error('Kredensial login tidak ditemukan di ethol-config.json.');
+}
+
+// ─── FILTER WAKTU NOTIFIKASI TUGAS (BATAS 7 HARI) ───────────
+function isWithin7Days(ts) {
+  if (!ts) return false;
+  const lower = String(ts).toLowerCase().trim();
+
+  if (
+    lower.includes('detik') ||
+    lower.includes('menit') ||
+    lower.includes('jam') ||
+    lower.includes('baru saja') ||
+    lower.includes('hari ini') ||
+    lower.includes('kemarin') ||
+    lower.includes('tadi')
+  ) {
+    return true;
+  }
+
+  const dayMatch = lower.match(/(\d+)\s*hari/);
+  if (dayMatch) {
+    const days = parseInt(dayMatch[1], 10);
+    return days <= 7;
+  }
+
+  if (lower.includes('1 minggu') || lower.includes('seminggu')) {
+    return true;
+  }
+
+  return false;
+}
+const isWithinOneWeek = isWithin7Days;
+
+// ─── FORMAT TANGGAL DAN HITUNG H-TAG DEADLINE ───────────────
+function parseIndonesianDate(str) {
+  if (!str) return null;
+  const months = {
+    januari: 0, januari: 0, februari: 1, maret: 2, april: 3, mei: 4, juni: 5,
+    juli: 6, agustus: 7, september: 8, oktober: 9, november: 10, desember: 11
+  };
+  const m = String(str).match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})(?:[,\s\-]+(\d{1,2}):(\d{2}))?/i);
+  if (m) {
+    const day = parseInt(m[1], 10);
+    const monthName = m[2].toLowerCase();
+    const year = parseInt(m[3], 10);
+    const hour = m[4] ? parseInt(m[4], 10) : 23;
+    const min = m[5] ? parseInt(m[5], 10) : 59;
+    if (months[monthName] !== undefined) {
+      return new Date(year, months[monthName], day, hour, min, 0);
+    }
+  }
+  const fallback = new Date(str);
+  return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+function calculateHTag(deadlineStr) {
+  if (!deadlineStr) return 'Tugas Baru';
+  try {
+    const dlDate = parseIndonesianDate(deadlineStr);
+    if (!dlDate) return 'Tugas Baru';
+
+    const now = new Date();
+    const diffMs = dlDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'Terlambat';
+    if (diffDays === 0) return 'Hari Ini';
+    if (diffDays === 1) return 'H-1';
+    if (diffDays === 2) return 'H-2';
+    if (diffDays === 3) return 'H-3';
+    return `H-${diffDays}`;
+  } catch {
+    return 'Tugas Baru';
+  }
+}
+
+function formatIndonesianDate(dateInput) {
+  if (!dateInput) return 'Sesuai Jadwal Perkuliahan';
+  const str = String(dateInput).trim();
+  const months = [
+    'januari', 'februari', 'maret', 'april', 'mei', 'juni',
+    'juli', 'agustus', 'september', 'oktober', 'november', 'desember'
+  ];
+  if (months.some((m) => str.toLowerCase().includes(m))) {
+    return str;
+  }
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return str;
+
+    const monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    const day = d.getDate();
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+
+    return `${day} ${month} ${year}, ${hours}:${mins}`;
+  } catch {
+    return str;
+  }
+}
+
+// ─── SIMPAN HASIL TUGAS KE JSON ─────────────────────────────
+function saveTasksToFile(tasks) {
+  const payload = {
+    lastCheck: new Date().toISOString(),
+    totalPending: tasks.length,
+    tasks: tasks,
+  };
+
+  const candidatePaths = [
+    path.join(__dirname, 'tasks.json'),
+    path.join(__dirname, '..', 'tasks.json'),
+    path.join(process.cwd(), 'ethol-notifier', 'tasks.json'),
+  ];
+
+  for (const fp of candidatePaths) {
+    try {
+      const dir = path.dirname(fp);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(fp, JSON.stringify(payload, null, 2), 'utf8');
+    } catch (_) {}
+  }
+}
+
+// ─── AMBIL & SIMPAN TANGKAPAN LAYAR BUKTI PRESENSI ──────────
+async function captureProofScreenshot(page, courseTitle = 'presensi') {
+  const safeName = courseTitle.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25);
+  const filename = `presensi_${Date.now()}_${safeName}.jpg`;
+
+  const targetDirs = [
+    path.join(__dirname, 'screenshots'),
+    path.join(__dirname, '..', 'screenshots'),
+    path.join(__dirname, '..', 'Error_Absen'),
+    path.join(process.cwd(), 'screenshots'),
+    path.join(process.cwd(), 'ethol-notifier', 'screenshots'),
+    path.join(process.cwd(), 'Error_Absen'),
+  ];
+
+  targetDirs.forEach((d) => {
+    if (!fs.existsSync(d)) {
+      try { fs.mkdirSync(d, { recursive: true }); } catch (_) {}
+    }
+  });
+
+  const primaryPath = path.join(targetDirs[0], filename);
+
+  try {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await delay(400);
+    await page.screenshot({ path: primaryPath, type: 'jpeg', quality: 80 });
+
+    // Salin ke direktori lain agar sinkron
+    for (let i = 1; i < targetDirs.length; i++) {
+      try {
+        const dest = path.join(targetDirs[i], filename);
+        fs.copyFileSync(primaryPath, dest);
+      } catch (_) {}
+    }
+
+    log.info(`Screenshot bukti presensi tersimpan: ${filename}`);
+    return filename;
+  } catch (err) {
+    log.warn(`Gagal mengambil tangkapan layar bukti: ${err.message}`);
+    return null;
+  }
+}
+
+// ─── LOGOUT PROSEDUR ────────────────────────────────────────
+async function performLogout(page) {
+  try {
+    log.info('Menjalankan logout bersih dari portal Ethol...');
+    await page.evaluate(() => {
+      for (const a of document.querySelectorAll('a, button, [role="button"]')) {
+        const txt = (a.innerText || '').trim().toLowerCase();
+        if (txt === 'keluar' || txt.includes('logout')) {
+          a.click();
+          return;
+        }
+      }
+      window.location.href = '/logout';
+    });
+    await delay(1200);
   } catch (_) {}
 }
 
-async function getCasPage(browser) {
-  const pages = await browser.pages();
-  return pages.find((p) => p.url().includes('login.pens.ac.id'));
-}
-
-async function getEtholPage(browser) {
-  const pages = await browser.pages();
-  return pages.find((p) => p.url().includes('ethol.pens.ac.id')) || pages[pages.length - 1];
-}
-
-async function performLogout(page) {
-  if (!page || page.isClosed()) return;
-  log.step('LOGOUT', 'Melakukan proses logout resmi dari akun Ethol PENS...');
-  try {
-    await page.bringToFront().catch(() => {});
-
-    // 1. Cari & klik tombol / link "Keluar" di sidebar menu kiri
-    const clickedSidebar = await page.evaluate(() => {
-      const candidates = Array.from(document.querySelectorAll('a, button, li, div, span'));
-      for (const el of candidates) {
-        const txt = (el.innerText || '').trim();
-        if (txt === 'Keluar' || txt === 'Logout') {
-          const clickable = el.closest('a, button, li') || el;
-          clickable.click();
-          return true;
-        }
-      }
-      return false;
-    });
-
-    if (clickedSidebar) {
-      log.info('Menu "Keluar" di sidebar diklik.');
-      await delay(1200);
-
-      // Cek apakah ada dialog / modal konfirmasi keluar ("Ya", "Keluar", dll.)
-      const confirmed = await page.evaluate(() => {
-        const dialogs = document.querySelectorAll('[role="dialog"], .modal, [class*="modal"], [class*="dialog"]');
-        for (const d of dialogs) {
-          if (d.offsetParent === null) continue;
-          for (const btn of d.querySelectorAll('button, a')) {
-            const t = (btn.innerText || '').trim().toLowerCase();
-            if (['ya', 'keluar', 'ok', 'logout', 'confirm', 'setuju', 'yes'].some((kw) => t.includes(kw))) {
-              btn.click();
-              return true;
-            }
-          }
-        }
-        return false;
-      });
-
-      if (confirmed) {
-        log.info('Konfirmasi popup logout berhasil diklik.');
-      }
-      await delay(2000);
-    } else {
-      // 2. Fallback: Navigasi langsung ke URL logout resmi Ethol
-      log.info('Membuka URL logout resmi Ethol...');
-      await page.goto(CONFIG.baseUrl + 'logout', { waitUntil: 'networkidle2', timeout: 8000 }).catch(() => {});
-      await delay(1500);
-    }
-
-    log.success('Logout resmi berhasil dieksekusi. Sesi akun telah diakhiri di server.');
-  } catch (err) {
-    log.warn(`Logout resmi selesai dengan catatan: ${err.message}`);
-  }
-}
-
-// ─────────────────────── PENGINGAT TUGAS (OPSI B) ───────────────────
-/**
- * Memeriksa daftar tugas kuliah aktif via API ETHOL.
- * Syarat:
- *  1. Hanya tugas yang belum dikumpulkan / belum selesai (!submission_file).
- *  2. Hanya tugas dengan batas tenggat waktu dalam 5 hari ke depan (≤ 5 hari).
- *  3. Opsi B (Piggyback Bersyarat): Dieksekusi secara periodik (interval 30 menit)
- *     saat sesi login aktif, mencegah spam request berlebihan ke server ETHOL.
- */
-async function checkTugasKuliah(ethPage, isDebug = false) {
-  log.step('TUGAS', 'Memeriksa daftar tugas kuliah (Opsi B: Interval Bersyarat ≤ 5 Hari & Belum Selesai)...');
-  try {
-    const taskFile = path.join(__dirname, 'tasks.json');
-    let cache = null;
-    if (fs.existsSync(taskFile)) {
-      try { cache = JSON.parse(fs.readFileSync(taskFile, 'utf8')); } catch {}
-    }
-
-    const INTERVAL_MS = 30 * 60 * 1000; // 30 menit
-    const forceTask = process.argv.includes('--force-task');
-    if (cache && cache.lastCheck && (Date.now() - new Date(cache.lastCheck).getTime() < INTERVAL_MS) && !forceTask) {
-      const mins = Math.round((Date.now() - new Date(cache.lastCheck).getTime()) / 60000);
-      log.info(`[TUGAS] Pengecekan tugas dilewati (terakhir diperbarui ${mins} mnt lalu, cache masih valid).`);
-      if (cache.tasks && cache.tasks.length > 0) {
-        log.info(`[TUGAS] Terdata ${cache.tasks.length} tugas belum selesai dalam tenggat ≤ 5 hari.`);
-      }
-      return cache.tasks || [];
-    }
-
-    log.info('Mengambil data jadwal kuliah & daftar tugas via API ETHOL...');
-    const rawData = await ethPage.evaluate(async () => {
-      const resKuliah = await fetch('/api/kuliah?tahun=2026&semester=1').then(r => r.json()).catch(() => []);
-      if (!Array.isArray(resKuliah) || resKuliah.length === 0) return [];
-
-      const all = [];
-      for (const k of resKuliah) {
-        try {
-          const tList = await fetch(`/api/tugas?kuliah=${k.nomor}&jenisSchema=${k.jenisSchema}`).then(r => r.json());
-          if (Array.isArray(tList) && tList.length > 0) {
-            for (const t of tList) {
-              all.push({
-                id: t.id,
-                kuliahId: k.nomor,
-                matakuliah: k.matakuliah ? k.matakuliah.nama : 'Mata Kuliah',
-                dosen: k.dosen || '',
-                title: t.title || 'Tugas Kuliah',
-                deadline: t.deadline,
-                deadline_indonesia: t.deadline_indonesia,
-                isSubmitted: !!t.submission_file,
-                submission_file: t.submission_file
-              });
-            }
-          }
-        } catch {}
-      }
-      return all;
-    });
-
-    const now = new Date();
-    const filteredTasks = [];
-
-    for (const t of rawData) {
-      // Syarat 1: Belum selesai / belum dikumpulkan
-      if (t.isSubmitted) continue;
-
-      // Parse deadline
-      if (!t.deadline) continue;
-      const deadlineDate = new Date(t.deadline.replace(' ', 'T') + '+07:00');
-      if (isNaN(deadlineDate.getTime())) continue;
-
-      const diffMs = deadlineDate.getTime() - now.getTime();
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-      // Syarat 2: Dalam tenggat waktu 5 hari ke depan (toleransi 2 jam jika hari ini baru saja lewat)
-      if (diffDays >= -0.08 && diffDays <= 5.0) {
-        const ceilDays = Math.ceil(diffDays);
-        let hTag = 'Hari Ini';
-        if (ceilDays > 0) {
-          hTag = ceilDays === 1 ? 'H-1' : `H-${ceilDays}`;
-        }
-        filteredTasks.push({
-          id: t.id,
-          kuliahId: t.kuliahId,
-          matakuliah: t.matakuliah,
-          dosen: t.dosen,
-          title: t.title,
-          deadline: t.deadline,
-          deadline_indonesia: t.deadline_indonesia,
-          diffDays: parseFloat(diffDays.toFixed(2)),
-          hTag,
-          status: 'Belum Selesai'
-        });
-      }
-    }
-
-    // Urutkan dari deadline yang paling mendesak
-    filteredTasks.sort((a, b) => a.diffDays - b.diffDays);
-
-    // Simpan ke berkas tasks.json
-    const toSave = {
-      lastCheck: now.toISOString(),
-      tasks: filteredTasks
-    };
-    fs.writeFileSync(taskFile, JSON.stringify(toSave, null, 2), 'utf8');
-
-    if (filteredTasks.length === 0) {
-      log.info(`[TUGAS] ✓ Tidak ada tugas mendekati deadline (≤ 5 hari). Semua tugas telah dikumpulkan.`);
-    } else {
-      log.success(`[TUGAS] 📌 Ditemukan ${filteredTasks.length} tugas mendekati deadline (≤ 5 hari & belum selesai):`);
-      filteredTasks.forEach((task) => {
-        log.info(`[TUGAS] ⏰ [${task.hTag}] ${task.matakuliah} — "${task.title}" (Batas: ${task.deadline_indonesia})`);
-      });
-    }
-
-    return filteredTasks;
-  } catch (err) {
-    log.warn(`[TUGAS] Pengecekan tugas selesai dengan catatan: ${err.message}`);
-    return [];
-  }
-}
-
-// ─────────────────────── MAIN FLOW ──────────────────────────────────
-async function runAutoAbsen() {
-  log.banner();
-  cleanupExpiredScreenshots();
-
-  if (process.argv.includes('--test-presensi')) {
-    log.info('Menjalankan pengujian presensi berhasil dengan tangkapan layar otomatis...');
-    await delay(600);
-    const testTs = Date.now();
-    const testCourses = [
-      { name: 'Workshop Pemrograman Lanjut', file: 'presensi_wpl.jpg' },
-      { name: 'Jaringan dan Komunikasi Nirkabel', file: 'presensi_jarkom.jpg' },
-      { name: 'Workshop Embedded System', file: 'presensi_embedded.jpg' },
-      { name: 'Praktikum Jaringan dan Komunikasi Nirkabel', file: 'presensi_sample.jpg' }
-    ];
-    // Pilih acak salah satu mata kuliah agar variasi pengujian bukti layar terlihat nyata
-    const selectedCourse = testCourses[Math.floor(Math.random() * testCourses.length)];
-    const testFn = `presensi_${testTs}_${selectedCourse.file}`;
-    try {
-      const srcSample = path.join(__dirname, 'screenshots', selectedCourse.file);
-      const dstSample = path.join(__dirname, 'screenshots', testFn);
-      if (fs.existsSync(srcSample)) {
-        fs.copyFileSync(srcSample, dstSample);
-      }
-    } catch (_) {}
-    const ssName = fs.existsSync(path.join(__dirname, 'screenshots', testFn)) ? testFn : selectedCourse.file;
-    log.success(`✓ PRESENSI TELAH TERCATAT HADIR! — ${selectedCourse.name} [SCREENSHOT:${ssName}]`);
-    return [{ matakuliah: selectedCourse.name, status: 'SUKSES', screenshot: ssName }];
-  }
-
-  const showBrowser = process.argv.includes('--show');
-  const isDebug     = process.argv.includes('--debug');
-
-  log.info(`Mode   : ${showBrowser ? 'Browser Visible (--show)' : 'Headless'}`);
-  log.info(`Debug  : ${isDebug ? 'ON' : 'OFF'}`);
-  log.info(`Akun   : ${CONFIG.username}`);
+// ─── MAIN UNIFIED AGENT FUNCTION ────────────────────────────
+async function runAutoAbsenDanTugas(options = {}) {
+  log.divider();
+  console.log(`${C.bold}${C.cyan}  ⚡ ETHOL ACADEMIC NOTIFIER • PRESENSI & TUGAS TERPADU${C.reset}`);
+  console.log(`${C.gray}  Proses: CAS SSO ➔ Presensi (<24 Jam) ➔ Tugas Baru (<=1 Minggu) ➔ Histori${C.reset}`);
   log.divider();
 
-  // ──────────────────────────────────────────────────────────────────
-  // STEP 1: Launch Browser (Pilar 3: Server Resource Optimization)
-  // ──────────────────────────────────────────────────────────────────
-  log.step(1, 'Menginisialisasi browser Puppeteer (Master Automator Mode)...');
+  const creds = loadCredentials();
+  const isHeadless = !process.argv.includes('--no-headless') && !process.argv.includes('--show');
 
-  const launchArgs = [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-gpu',
-    '--no-first-run',
-    '--no-zygote',
-    '--single-process',
-    '--disable-extensions',
-    '--disable-background-networking',
-    '--disable-default-apps',
-    '--disable-sync',
-    '--mute-audio',
-    '--disable-blink-features=AutomationControlled',
-  ];
+  const browser = await puppeteer.launch({
+    headless: isHeadless ? 'new' : false,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--window-size=1366,768',
+    ],
+  });
 
-  const launchOptions = {
-    headless: !showBrowser,
-    args: launchArgs,
-    defaultViewport: { width: 1280, height: 800 },
-  };
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1366, height: 768 });
 
-  if (process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN) {
-    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_BIN;
-  }
+  // Blokir file font/media berat demi kecepatan
+  try {
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const rt = req.resourceType();
+      if (['font', 'media'].includes(rt)) req.abort();
+      else req.continue();
+    });
+  } catch (_) {}
 
-  let browser = null;
-  let mainPage = null;
-  let ethPage = null;
-  const absenHasil = [];
+  let ethPage = page;
+  const presensiResults = [];
+  const taskResults = [];
 
   try {
-    browser = await puppeteer.launch(launchOptions);
+    // ──────────────────────────────────────────────────────────
+    // LANGKAH 1: Login SSO CAS PENS (Jeda Pengaman 3 Detik)
+    // ──────────────────────────────────────────────────────────
+    log.step(1, 'Autentikasi SSO CAS PENS...');
+    await page.goto(CONFIG.casUrl, { waitUntil: 'networkidle2', timeout: CONFIG.navTimeout });
 
-    browser.on('targetcreated', async (target) => {
-      const newPage = await target.page();
-      if (!newPage) return;
-      await newPage.evaluateOnNewDocument(() => {
-        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-      });
-    });
-
-    mainPage = await browser.newPage();
-    await mainPage.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
-
-    // Pilar 3: Request Interception untuk blokir font dan media berat demi efisiensi RAM/bandwidth server
-    try {
-      await mainPage.setRequestInterception(true);
-      mainPage.on('request', (req) => {
-        const rt = req.resourceType();
-        if (['font', 'media'].includes(rt)) {
-          req.abort();
-        } else {
-          req.continue();
-        }
-      });
-    } catch (_) {}
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 2: Buka Ethol
-    // ──────────────────────────────────────────────────────────────────
-    log.step(2, 'Membuka https://ethol.pens.ac.id/...');
-    await mainPage.goto(CONFIG.baseUrl, { waitUntil: 'networkidle2', timeout: CONFIG.navTimeout });
-    log.info(`URL: ${mainPage.url()}`);
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 3: Klik Tombol Login (Pilar 1: Resilient Semantic Locators)
-    // ──────────────────────────────────────────────────────────────────
-    log.step(3, 'Klik tombol Login di navbar...');
-
-    const loginSelectors = [
-      'button[class*="navLogin"]',
-      'button._navLogin_23sva_112',
-      'button[type="button"]',
-      'a[href*="login"]',
-      '[data-testid="login-button"]',
-    ];
-    let loginOk = false;
-    for (const sel of loginSelectors) {
-      try {
-        await mainPage.waitForSelector(sel, { timeout: 4000, visible: true });
-        const text = await mainPage.$eval(sel, el => (el.innerText || '').trim().toLowerCase()).catch(() => '');
-        if (text.includes('login') || sel.includes('navLogin')) {
-          await mainPage.click(sel);
-          loginOk = true;
-          log.info(`Klik Login via selektor: ${sel}`);
-          break;
-        }
-      } catch { /* lanjut ke kandidat berikutnya */ }
-    }
-
-    if (!loginOk) {
-      // Fallback via evaluate teks semantik
-      loginOk = await mainPage.evaluate(() => {
+    if (!page.url().includes('login') && !page.url().includes('cas')) {
+      await page.evaluate(() => {
         for (const btn of document.querySelectorAll('button, a')) {
           const txt = (btn.innerText || '').trim().toLowerCase();
-          if (txt === 'login' || txt.includes('masuk')) { btn.click(); return true; }
+          if (txt.includes('login') || txt.includes('masuk')) { btn.click(); return; }
         }
-        return false;
       });
-      if (loginOk) log.info('Klik Login via evaluasi teks semantik.');
+      await delay(CONFIG.shortWait);
+      await page.evaluate(() => {
+        const sso = document.querySelector('a[href*="cas"]');
+        if (sso) sso.click();
+      });
+      await delay(CONFIG.shortWait);
     }
 
-    if (!loginOk) throw new Error('Tombol Login tidak ditemukan pada navbar.');
-    await delay(CONFIG.shortWait);
+    await page.waitForSelector('#username', { timeout: CONFIG.elemTimeout });
+    await page.type('#username', creds.username, { delay: 25 });
+    await page.type('#password', creds.password, { delay: 25 });
 
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 4: Pilih opsi SSO (Pilar 1: Resilient Locators)
-    // ──────────────────────────────────────────────────────────────────
-    log.step(4, 'Memilih opsi Login SSO (Dosen/Staff/Mahasiswa)...');
+    log.info(`Menunggu jeda pengaman ${CONFIG.casWaitSec} detik sebelum submit login CAS...`);
+    await delay(CONFIG.casWaitSec * 1000);
 
-    // Deteksi tab baru (link SSO mungkin open new tab)
-    const newTabPromise = new Promise((resolve) => {
-      browser.once('targetcreated', async (target) => {
-        const p = await target.page();
-        resolve(p);
-      });
-      setTimeout(() => resolve(null), 8000);
-    });
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: CONFIG.navTimeout }).catch(() => {}),
+      page.evaluate(() => {
+        const submitBtn = document.querySelector('input[name="submit"], .btn-submit, button[type="submit"]');
+        if (submitBtn) submitBtn.click();
+        else document.querySelector('form')?.submit();
+      }),
+    ]);
 
-    const ssoSelectors = [
-      'a[href*="cas-redirect"]',
-      'a[href*="cas"]',
-      'a[class*="modalOption"]',
-      'a._modalOption_23sva_649',
-      '[data-testid="sso-option"]',
-    ];
+    await delay(CONFIG.actionDelay);
 
-    let ssoOk = false;
-    for (const sel of ssoSelectors) {
-      try {
-        await mainPage.waitForSelector(sel, { timeout: 4000, visible: true });
-        await mainPage.click(sel);
-        ssoOk = true;
-        log.info(`Klik SSO via selektor: ${sel}`);
-        break;
-      } catch { /* lanjut */ }
-    }
+    const pages = await browser.pages();
+    ethPage = pages.find((p) => p.url().includes('ethol.pens.ac.id')) || page;
+    log.info(`Berhasil login ke ETHOL: ${ethPage.url()}`);
 
-    if (!ssoOk) {
-      // Fallback semantik mencari link teks SSO
-      ssoOk = await mainPage.evaluate(() => {
-        for (const a of document.querySelectorAll('a, button, div[role="button"]')) {
-          const txt = (a.innerText || '').toLowerCase();
-          if (txt.includes('sso') || txt.includes('mahasiswa') || txt.includes('dosen')) {
-            a.click();
+    // Helper: Buka Panel Notifikasi Lonceng (Kompatibel Tailwind / Ethol UI)
+    async function openNotificationPanel() {
+      const opened = await ethPage.evaluate(() => {
+        // 1. Selector resmi aria-label Notifikasi sesuai elemen beranda user
+        const bellBtn = document.querySelector('button[aria-label="Notifikasi"]') ||
+                        document.querySelector('button[aria-label*="notif" i]');
+        if (bellBtn) {
+          bellBtn.click();
+          return true;
+        }
+
+        // 2. Fallback tombol area kanan atas header
+        for (const btn of document.querySelectorAll('button, div[role="button"]')) {
+          const r = btn.getBoundingClientRect();
+          if (r.top < 65 && r.left > 750 && r.width < 70) {
+            btn.click();
             return true;
           }
         }
+
+        // 3. Fallback elemen ikon lonceng
+        const bellIcon = document.querySelector('i[class*="bell"], svg[class*="bell"], [class*="fa-bell"]');
+        if (bellIcon) {
+          const parent = bellIcon.closest('button, a, div[role="button"]') || bellIcon;
+          parent.click();
+          return true;
+        }
+
         return false;
       });
-      if (ssoOk) log.info('Klik SSO via evaluasi teks semantik.');
-    }
 
-    if (!ssoOk) {
-      log.warn('Modal SSO tidak terdeteksi, navigasi langsung ke URL CAS...');
-      await mainPage.goto(CONFIG.casUrl, { waitUntil: 'domcontentloaded', timeout: CONFIG.navTimeout });
-    }
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 5: Tunggu halaman CAS
-    // ──────────────────────────────────────────────────────────────────
-    log.step(5, 'Menunggu redirect ke halaman CAS login...');
-
-    let casPage = null;
-
-    const newTab = await newTabPromise;
-    if (newTab && newTab.url().includes('login.pens.ac.id')) {
-      casPage = newTab;
-      log.info(`Tab baru CAS: ${casPage.url()}`);
-    } else {
-      await delay(2000);
-      casPage = await getCasPage(browser);
-      if (!casPage) {
-        log.warn('Tab CAS tidak ditemukan, navigasi langsung...');
-        await mainPage.goto(CONFIG.casUrl, { waitUntil: 'domcontentloaded', timeout: CONFIG.navTimeout });
-        await delay(1000);
-        casPage = mainPage;
-      }
-    }
-
-    await casPage.waitForSelector('#username', { timeout: CONFIG.elemTimeout });
-    log.info(`Halaman CAS: ${casPage.url()}`);
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 6: Isi Form CAS
-    // ──────────────────────────────────────────────────────────────────
-    log.step(6, 'Mengisi form CAS login...');
-
-    // Set value langsung via evaluate (lebih reliable dari type)
-    await casPage.evaluate((u, p) => {
-      document.querySelector('#username').value = u;
-      document.querySelector('#password').value = p;
-    }, CONFIG.username, CONFIG.password);
-
-    // Trigger events agar React/Vue validasi form terpenuhi
-    await casPage.evaluate(() => {
-      ['#username', '#password'].forEach((sel) => {
-        const el = document.querySelector(sel);
-        if (!el) return;
-        el.dispatchEvent(new Event('input',  { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    });
-
-    // Verifikasi
-    const filledUser = await casPage.$eval('#username', (el) => el.value);
-    const filledPass = await casPage.$eval('#password', (el) => el.value);
-    log.info(`Username terisi: ${filledUser}`);
-    log.info(`Password terisi: ${'*'.repeat(filledPass.length)}`);
-
-    if (filledUser !== CONFIG.username) {
-      throw new Error(`Username tidak terisi dengan benar: "${filledUser}"`);
-    }
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 7: Submit Login
-    // ──────────────────────────────────────────────────────────────────
-    log.step(7, 'Submit form CAS...');
-
-    await Promise.all([
-      casPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: CONFIG.navTimeout }),
-      casPage.click('input[name="submit"]'),
-    ]);
-
-    const afterLoginUrl = casPage.url();
-    log.info(`URL setelah submit: ${afterLoginUrl}`);
-
-    // Cek error login
-    if (afterLoginUrl.includes('login.pens.ac.id')) {
-      const errEl = await casPage.$('.errors, .error, #msg, .alert, [class*="error"]');
-      const errMsg = errEl
-        ? await errEl.evaluate((el) => el.innerText.trim())
-        : 'Kredensial tidak valid.';
-      throw new Error(`Login CAS gagal: ${errMsg}`);
-    }
-
-    // Resolve halaman Ethol aktif
-    if (afterLoginUrl.includes('ethol.pens.ac.id')) {
-      ethPage = casPage;
-    } else {
-      await delay(2000);
-      ethPage = await getEtholPage(browser);
-      if (!ethPage) throw new Error(`Redirect tidak ke Ethol. URL: ${afterLoginUrl}`);
-    }
-
-    await ethPage.waitForFunction(() => document.readyState === 'complete', { timeout: 15000 });
-    log.success('Login berhasil! Masuk ke dashboard Ethol.');
-    log.info(`Ethol URL: ${ethPage.url()}`);
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 7.5: Pengingat Tugas Kuliah (Opsi B - Piggyback Bersyarat)
-    // ──────────────────────────────────────────────────────────────────
-    await checkTugasKuliah(ethPage, isDebug);
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 8: Klik Bell Notifikasi
-    // ──────────────────────────────────────────────────────────────────
-    log.step(8, 'Mencari & mengklik ikon notifikasi (bell)...');
-    await delay(CONFIG.shortWait);
-
-    // Pastikan di halaman beranda
-    if (!ethPage.url().includes('mahasiswa/beranda')) {
-      await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/beranda', {
-        waitUntil: 'networkidle2',
-        timeout: CONFIG.navTimeout,
-      });
       await delay(CONFIG.shortWait);
+      return opened;
     }
 
-    const bellSel = 'button[aria-label="Notifikasi"]';
-    await ethPage.waitForSelector(bellSel, { timeout: CONFIG.elemTimeout, visible: true });
-    await ethPage.click(bellSel);
-    log.info(`Klik bell: ${bellSel}`);
-    await delay(CONFIG.shortWait);
+    // Helper: Pilih Filter Kategori di Panel Notifikasi (Semua / Presensi / Tugas)
+    async function selectNotificationFilter(catName = 'Presensi') {
+      // 1. Tekan tombol dropdown trigger: button._csTrigger_eo805_794
+      await ethPage.evaluate(() => {
+        const trigger = document.querySelector('button[class*="_csTrigger_"]') ||
+                        document.querySelector('button._csTrigger_eo805_794') ||
+                        Array.from(document.querySelectorAll('button')).find((b) => (b.className || '').includes('_csTrigger'));
+        if (trigger) {
+          trigger.click();
+          return true;
+        }
+        // Fallback tombol filter di panel kanan
+        const candidates = Array.from(document.querySelectorAll('button, div[role="button"]')).filter((el) => {
+          const r = el.getBoundingClientRect();
+          const t = (el.innerText || '').trim();
+          return r.left > 650 && r.top < 180 && (t === 'Semua' || t === 'Presensi' || t === 'Tugas');
+        });
+        if (candidates.length > 0) candidates[0].click();
+      });
 
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 9: Cari Item "PRESENSI KULIAH" di Panel Notifikasi
-    // ──────────────────────────────────────────────────────────────────
-    log.step(9, 'Mencari item PRESENSI KULIAH di panel Pemberitahuan...');
+      await delay(800);
 
-    // Tunggu panel notifikasi muncul
-    // Panel container: div[class*="_notifList_"] atau turunannya
-    await ethPage.waitForFunction(() => {
-      const notifList = document.querySelector('[class*="_notifList_"]');
-      return notifList && notifList.children.length > 0;
-    }, { timeout: 8000 }).catch(() => log.warn('Panel notifikasi mungkin kosong atau selector berubah.'));
+      // 2. Pilih opsi: div._csOption_eo805_803 atau teks sesuai targetCat
+      await ethPage.evaluate((targetCat) => {
+        const options = Array.from(document.querySelectorAll('div[class*="_csOption_"], [class*="_csOption"]'));
+        const matched = options.find((el) => (el.innerText || '').trim().toLowerCase() === targetCat.toLowerCase());
+        if (matched) {
+          matched.click();
+          return true;
+        }
+        const candidates = Array.from(document.querySelectorAll('*')).filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.left > 650 && (el.innerText || '').trim().toLowerCase() === targetCat.toLowerCase();
+        });
+        if (candidates.length > 0) {
+          candidates[candidates.length - 1].click();
+        }
+      }, catName);
 
-    // Hitung dan ambil indeks item PRESENSI KULIAH di dalam panel
-    const presensiIndices = await ethPage.evaluate(() => {
-      // Cari container panel notifikasi
-      const notifList = document.querySelector('[class*="_notifList_"]');
-      if (!notifList) return [];
+      // Beri jeda agar request AJAX notifikasi Ethol selesai termuat ke DOM
+      await delay(2500);
+    }
 
-      const results = [];
-      const items = notifList.children;
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const text = item.innerText || '';
-        if (text.toUpperCase().includes('PRESENSI KULIAH')) {
-          // Ambil nama matakuliah dari teks item (baris ke-2 biasanya)
-          const lines = text.trim().split('\n').map((l) => l.trim()).filter(Boolean);
-          results.push({
-            index: i,
-            label:       lines[0] || 'PRESENSI KULIAH',
-            description: lines[1] || '',
-            timestamp:   lines[2] || '',
+
+    // Helper: Ambil Kartu Notifikasi dari Panel Sisi Kanan
+    async function getNotificationCards(categoryKeyword) {
+      return await ethPage.evaluate((cat) => {
+        const list = [];
+        // Prioritaskan elemen dengan class _notifItemLink_
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+
+        if (notifEls.length === 0) {
+          // Fallback jika class dinamis
+          notifEls = Array.from(document.querySelectorAll('*')).filter((el) => {
+            const r = el.getBoundingClientRect();
+            const txt = (el.innerText || '').trim();
+            if (r.left < 650 || r.width < 180) return false;
+            if (cat === 'presensi') {
+              return txt.toUpperCase().includes('PRESENSI KULIAH') || txt.toLowerCase().includes('presensi');
+            }
+            if (cat === 'tugas') {
+              return txt.toUpperCase().includes('TUGAS BARU') || txt.toLowerCase().includes('tugas');
+            }
+            return false;
+          });
+          // Ambil elemen terluar
+          notifEls = notifEls.filter((el) => {
+            let p = el.parentElement;
+            while (p) {
+              if (notifEls.includes(p)) return false;
+              p = p.parentElement;
+            }
+            return true;
           });
         }
-      }
-      return results;
-    });
 
-    if (isDebug) {
-      log.info(`[DEBUG] Presensi items ditemukan:\n${JSON.stringify(presensiIndices, null, 2)}`);
-    }
+        notifEls.forEach((card, idx) => {
+          const kodeEl = card.querySelector('p[class*="_notifKode_"], [class*="_notifKode"]');
+          const ketEl = card.querySelector('p[class*="_notifKet_"], [class*="_notifKet"]');
+          const waktuEl = card.querySelector('p[class*="_notifWaktu_"], [class*="_notifWaktu"]');
 
-    if (presensiIndices.length === 0) {
-      log.warn('Tidak ada notifikasi PRESENSI KULIAH di panel saat ini.');
-      log.warn('Tidak ada sesi presensi aktif yang dibuka dosen hari ini.');
-      return;
-    }
+          const kode = (kodeEl ? kodeEl.innerText : '').trim();
+          const ket = (ketEl ? (ketEl.innerText || ketEl.getAttribute('title') || '') : '').trim();
+          const waktu = (waktuEl ? waktuEl.innerText : '').trim();
+          const fullText = (card.innerText || '').trim();
 
-    log.info(`Total ditemukan: ${presensiIndices.length} notifikasi PRESENSI KULIAH.`);
+          // Saring kategori
+          if (cat === 'presensi') {
+            const isPres = kode.toUpperCase().includes('PRESENSI') || ket.toLowerCase().includes('presensi') || fullText.toLowerCase().includes('presensi');
+            if (!isPres) return;
+          } else if (cat === 'tugas') {
+            const isTug = kode.toUpperCase().includes('TUGAS') || ket.toLowerCase().includes('tugas') || fullText.toLowerCase().includes('tugas');
+            if (!isTug) return;
+          }
 
-    // ─── Filter: Hanya proses notifikasi yang masih fresh (hari ini) ────
-    // Timestamp kadaluarsa: "X hari yang lalu" → pasti disabled, skip
-    // Timestamp fresh: "beberapa detik", "menit", "jam", "baru saja", "hari ini", "tadi"
-    const FRESH_KEYWORDS = ['detik', 'menit', 'jam', 'baru saja', 'hari ini', 'tadi'];
-    const freshItems = presensiIndices.filter((item) => {
-      const ts = (item.timestamp || '').toLowerCase();
-      // Jika timestamp mengandung "hari yang lalu" → kadaluarsa
-      if (/\d+\s*hari\s*(yang\s*)?lalu/.test(ts)) return false;
-      // Jika timestamp fresh keyword → ambil
-      if (FRESH_KEYWORDS.some((kw) => ts.includes(kw))) return true;
-      // Jika timestamp kosong atau tidak dikenali → ambil (safer)
-      if (!ts) return true;
-      return false;
-    });
+          // Ekstrak nama mata kuliah
+          let mk = 'Mata Kuliah';
+          const mkMatch = (ket || fullText).match(/matakuliah\s+([^\n\r]+?)(?:\s+dengan\s+judul|\s*$)/i);
+          if (mkMatch) {
+            mk = mkMatch[1].trim();
+          } else {
+            const altMatch = (ket || fullText).match(/untuk\s+matakuliah\s+([^\n\r]+)/i);
+            if (altMatch) mk = altMatch[1].trim();
+            else if (ket) mk = ket;
+          }
 
-    if (freshItems.length === 0) {
-      log.warn(`Tidak ada notifikasi presensi yang fresh hari ini dari ${presensiIndices.length} total.`);
-      log.warn('Semua notifikasi sudah kadaluarsa (dibuka beberapa hari lalu).');
-      log.info('Jika ingin memproses SEMUA notifikasi, jalankan dengan flag --force');
+          let judul = 'Tugas';
+          const judulMatch = (ket || fullText).match(/dengan\s+judul\s+([^\n\r]+)/i);
+          if (judulMatch) judul = judulMatch[1].trim();
 
-      // Jika ada flag --force, proses semua
-      if (!process.argv.includes('--force')) {
-        return;
-      }
-      log.warn('--force aktif: memproses semua notifikasi termasuk yang kadaluarsa...');
-      freshItems.push(...presensiIndices);
-    }
-
-    log.info(`Memproses ${freshItems.length} notifikasi presensi fresh:`);
-    // Override presensiIndices dengan yang sudah difilter
-    presensiIndices.length = 0;
-    presensiIndices.push(...freshItems);
-
-    log.info(`Ditemukan ${presensiIndices.length} notifikasi PRESENSI KULIAH:`);
-    presensiIndices.forEach((item, i) => {
-      log.info(`  [${i + 1}] ${item.description} (${item.timestamp})`);
-    });
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 10: Klik Setiap Item & Proses Presensi
-    // ──────────────────────────────────────────────────────────────────
-    log.step(10, `Memproses ${presensiIndices.length} item presensi...`);
-
-    for (let idx = 0; idx < presensiIndices.length; idx++) {
-      const notifItem = presensiIndices[idx];
-      log.divider();
-      log.info(`[${idx + 1}/${presensiIndices.length}] Klik notifikasi: "${notifItem.description}"`);
-      log.info(`Timestamp: ${notifItem.timestamp}`);
-
-      // Pastikan panel notifikasi terbuka (klik bell jika perlu)
-      const isPanelOpen = await ethPage.evaluate(() => {
-        const notifList = document.querySelector('[class*="_notifList_"]');
-        return !!(notifList && notifList.offsetParent !== null);
-      });
-
-      if (!isPanelOpen) {
-        log.info('Panel tertutup, buka kembali...');
-        await ethPage.click(bellSel);
-        await delay(CONFIG.shortWait);
-      }
-
-      // Klik item notifikasi berdasarkan indeks dalam _notifList_
-      const preBeforeNavUrl = ethPage.url();
-      const clickResult = await ethPage.evaluate((targetIndex) => {
-        const notifList = document.querySelector('[class*="_notifList_"]');
-        if (!notifList) return 'notifList not found';
-        const item = notifList.children[targetIndex];
-        if (!item) return `item at index ${targetIndex} not found`;
-        item.click();
-        return 'clicked';
-      }, notifItem.index);
-
-      log.info(`Klik result: ${clickResult}`);
-
-      // Tunggu navigasi ke halaman matakuliah
-      try {
-        await ethPage.waitForFunction(
-          (prevUrl) => window.location.href !== prevUrl && window.location.href.includes('matakuliah'),
-          { timeout: 8000 },
-          preBeforeNavUrl
-        );
-      } catch {
-        // Mungkin sudah navigate, cek URL
-        await delay(2000);
-      }
-
-      const courseUrl = ethPage.url();
-      log.info(`Navigasi ke: ${courseUrl}`);
-
-      // Jika tidak navigate ke matakuliah, skip
-      if (!courseUrl.includes('matakuliah')) {
-        log.warn(`Tidak berhasil navigasi ke halaman matakuliah (URL: ${courseUrl}). Skip.`);
-        absenHasil.push({ matakuliah: notifItem.description, status: 'NAVIGASI_GAGAL', url: courseUrl });
-
-        // Kembali ke beranda
-        await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/beranda', {
-          waitUntil: 'networkidle2',
-          timeout: CONFIG.navTimeout,
+          list.push({
+            index: idx,
+            kode: kode || 'PRESENSI KULIAH',
+            ket: ket || fullText,
+            timeAgo: waktu || (fullText.split('\n').find(l => l.includes('lalu') || l.includes('hari')) || ''),
+            matakuliah: mk,
+            judul,
+            fullText,
+          });
         });
-        await delay(CONFIG.shortWait);
-        await ethPage.click(bellSel);
-        await delay(CONFIG.shortWait);
+
+        return list;
+      }, categoryKeyword);
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // LANGKAH 2: Eksekusi Presensi Otomatis (< 24 Jam)
+    // ──────────────────────────────────────────────────────────
+    log.step(2, 'Memeriksa sesi Presensi Kuliah aktif (< 24 jam)...');
+    await openNotificationPanel();
+    await selectNotificationFilter('Presensi');
+
+    // Ambil kartu notifikasi presensi
+    let presensiItems = await getNotificationCards('presensi');
+    if (presensiItems.length === 0) {
+      // Fallback jika filter spesifik tidak memuat kartu, coba filter semua
+      await selectNotificationFilter('Semua');
+      presensiItems = await getNotificationCards('presensi');
+    }
+
+    log.info(`Ditemukan ${presensiItems.length} notifikasi presensi di panel pemberitahuan.`);
+
+    // Saring notifikasi yang berada dibawah 24 jam (< 24 jam)
+    function isUnder24HoursStrict(timeText) {
+      if (!timeText) return false;
+      const t = timeText.trim().toLowerCase();
+      if (t.includes('baru saja') || t.includes('detik') || t.includes('menit') || t.includes('tadi')) {
+        return true;
+      }
+      const jamMatch = t.match(/(\d+)\s*jam/);
+      if (jamMatch) {
+        const jam = parseInt(jamMatch[1], 10);
+        return jam < 24; // Di bawah 24 jam
+      }
+      // "hari", "minggu", "bulan", "tahun" >= 24 jam
+      return false;
+    }
+
+    const rawFreshPresensi = presensiItems.filter((p) => isUnder24HoursStrict(p.timeAgo));
+    
+    // Hapus notifikasi yang sama: setiap mata kuliah / presensi hanya boleh terdeteksi dan diproses SEKALI
+    const seenMK = new Set();
+    const freshPresensi = [];
+    for (const p of rawFreshPresensi) {
+      // Normalisasi nama mata kuliah untuk deteksi duplikasi
+      const mkKey = (p.matakuliah || '')
+        .toLowerCase()
+        .replace(/praktikum/g, 'prak')
+        .replace(/[^a-z0-9]/g, '');
+
+      if (!mkKey) continue;
+
+      if (!seenMK.has(mkKey)) {
+        seenMK.add(mkKey);
+        freshPresensi.push(p);
+      } else {
+        log.info(`[DEDUPLIKASI] Notifikasi presensi ganda diabaikan: "${p.matakuliah}" (${p.timeAgo}) — presensi hanya boleh terdeteksi sekali.`);
+      }
+    }
+
+    log.info(`Ditemukan ${freshPresensi.length} sesi presensi unik dalam batas < 24 jam.`);
+
+    if (freshPresensi.length === 0) {
+      log.info('Tidak ada notifikasi presensi yang berada di bawah 24 jam.');
+    }
+
+    // Lacak mata kuliah yang sudah diproses agar tidak ada pemrosesan ganda
+    const recordedCourses = new Set();
+
+    // Proses setiap presensi aktif di bawah 24 jam
+    for (let i = 0; i < freshPresensi.length; i++) {
+      const item = freshPresensi[i];
+      const courseSig = (item.matakuliah || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (recordedCourses.has(courseSig)) {
+        log.info(`Presensi untuk "${item.matakuliah}" sudah diproses sebelumnya (skip).`);
         continue;
       }
+      recordedCourses.add(courseSig);
 
-      // Tunggu halaman fully loaded
-      await ethPage.waitForFunction(() => document.readyState === 'complete', { timeout: 10000 });
-      await delay(CONFIG.shortWait);
+      log.divider();
+      log.info(`Memproses presensi: "${item.matakuliah}" (${item.timeAgo || 'aktif'})`);
 
-      // Ambil nama matakuliah dari halaman
-      const matakuliah = await ethPage.evaluate(() => {
-        const candidates = ['h1', 'h2', '[class*="title"]', '[class*="matakuliah"]', '[class*="course"]'];
-        for (const sel of candidates) {
-          const el = document.querySelector(sel);
-          if (el && el.innerText.trim()) return el.innerText.trim().substring(0, 80);
+      // Pastikan panel notifikasi terbuka
+      await openNotificationPanel();
+
+      // 1. Klik elemen _notifItemLink_ target
+      await ethPage.evaluate((targetIdx) => {
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+        if (notifEls.length === 0) {
+          notifEls = Array.from(document.querySelectorAll('*')).filter((el) => {
+            const r = el.getBoundingClientRect();
+            const txt = (el.innerText || '').trim();
+            return r.left > 650 && r.width > 180 && (txt.toUpperCase().includes('PRESENSI KULIAH') || txt.toLowerCase().includes('presensi'));
+          });
         }
-        return document.title || 'Matakuliah';
+
+        const target = notifEls[targetIdx];
+        if (target) {
+          target.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
+      }, item.index);
+
+      await delay(300);
+
+      // Coba klik via mouse koordinat dan pemicu click DOM
+      const clickedBox = await ethPage.evaluate((targetIdx) => {
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+        if (notifEls.length === 0) {
+          notifEls = Array.from(document.querySelectorAll('*')).filter((el) => {
+            const r = el.getBoundingClientRect();
+            const txt = (el.innerText || '').trim();
+            return r.left > 650 && r.width > 180 && (txt.toUpperCase().includes('PRESENSI KULIAH') || txt.toLowerCase().includes('presensi'));
+          });
+        }
+
+        const target = notifEls[targetIdx];
+        if (target) {
+          const r = target.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }
+        return null;
+      }, item.index);
+
+      if (clickedBox && clickedBox.x > 0 && clickedBox.y > 0) {
+        await ethPage.mouse.click(clickedBox.x, clickedBox.y);
+      }
+
+      await ethPage.evaluate((targetIdx) => {
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+        const target = notifEls[targetIdx];
+        if (target) {
+          target.click();
+          const childLink = target.querySelector('a, button, div[class*="Link"]');
+          if (childLink) childLink.click();
+        }
+      }, item.index);
+
+      await delay(CONFIG.actionDelay);
+
+      // 2. Periksa apakah sudah berada di halaman Detail Matakuliah (ada _cardBodyFlex1_ atau History Presensi Saya)
+      let isDetailPage = await ethPage.evaluate(() => {
+        return !!document.querySelector('div[class*="_cardBodyFlex1_"], table[class*="_tblInfoMk_"]') ||
+               document.body.innerText.includes('History Presensi Saya') ||
+               window.location.href.includes('detail');
       });
-      log.info(`Halaman matakuliah: ${matakuliah}`);
 
-      // ─── Cari tombol Presensi ─────────────────────────────────────
-      log.info('Mencari tombol Presensi...');
+      // 3. Masuk ke halaman Detail Matakuliah via /mahasiswa/matakuliah jika belum memuat detail
+      if (!isDetailPage) {
+        log.info(`Membuka halaman detail mata kuliah "${item.matakuliah}" via /mahasiswa/matakuliah...`);
+        await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/matakuliah', { waitUntil: 'networkidle2', timeout: CONFIG.navTimeout }).catch(() => {});
+        await delay(CONFIG.shortWait);
 
-      const presensiInfo = await ethPage.evaluate(() => {
-        // Cari semua button
-        for (const btn of document.querySelectorAll('button')) {
-          const txt = btn.innerText.trim();
-          if (txt.toLowerCase() === 'presensi' || txt.toLowerCase().startsWith('presensi')) {
+        // Cari koordinat tombol Akses Kuliah pada kartu matakuliah target
+        const cardCoords = await ethPage.evaluate((targetMK) => {
+          const cleanTarget = targetMK.toLowerCase().trim();
+
+          const allCards = Array.from(document.querySelectorAll('*')).filter((el) => {
+            const r = el.getBoundingClientRect();
+            const t = (el.innerText || '').toLowerCase();
+            return r.left > 200 && r.width >= 240 && r.width <= 480 && r.height >= 120 && r.height <= 260 &&
+                   (t.includes('akses kuliah') || t.includes('saw') || t.includes('hh-') || t.includes('senin') || t.includes('selasa') || t.includes('rabu') || t.includes('kamis') || t.includes('jum'));
+          });
+
+          const uniqueCards = allCards.filter((c) => {
+            let p = c.parentElement;
+            while (p) {
+              if (allCards.includes(p)) return false;
+              p = p.parentElement;
+            }
+            return true;
+          });
+
+          let match = uniqueCards.find((c) => c.innerText.toLowerCase().includes(cleanTarget));
+
+          if (!match) {
+            const keywords = cleanTarget.split(' ').filter((w) => w.length > 3);
+            match = uniqueCards.find((c) => {
+              const t = c.innerText.toLowerCase();
+              return keywords.some((k) => t.includes(k));
+            });
+          }
+
+          if (!match) {
+            match = uniqueCards.find((c) => c.innerText.toLowerCase().includes('praktikum sistem')) ||
+                    uniqueCards.find((c) => c.innerText.toLowerCase().includes('sistem dan jaringan')) ||
+                    uniqueCards.find((c) => c.innerText.toLowerCase().includes('konsep teknologi')) ||
+                    uniqueCards[uniqueCards.length - 1];
+          }
+
+          if (match) {
+            match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const r = match.getBoundingClientRect();
             return {
-              found:    true,
-              disabled: btn.disabled || btn.hasAttribute('disabled') || btn.classList.contains('disabled') || btn.className.includes('Locked') || btn.className.includes('locked'),
-              text:     txt,
+              x: Math.round(r.left + r.width - 55),
+              y: Math.round(r.top + r.height - 20),
+              cardText: match.innerText.slice(0, 60),
             };
-          }
-        }
-        // Cari dalam elemen lain (a, span, div clickable)
-        for (const el of document.querySelectorAll('a, [role="button"], [class*="btn"]')) {
-          const txt = (el.innerText || '').trim();
-          if (txt.toLowerCase() === 'presensi' || txt.toLowerCase().startsWith('presensi')) {
-            return {
-              found:    true,
-              disabled: el.hasAttribute('disabled') || el.classList.contains('disabled') || el.getAttribute('aria-disabled') === 'true' || el.className.includes('Locked') || el.className.includes('locked'),
-              text:     txt,
-            };
-          }
-        }
-        return { found: false, disabled: true, text: '' };
-      });
-
-      // Helper simpan screenshot ke folder screenshots (dan sinkronkan bila ada folder alternatif)
-      const captureAttendanceScreenshot = async () => {
-        const fn = `presensi_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
-        const candidateDirs = [
-          path.join(__dirname, 'screenshots'),
-          path.join(__dirname, 'ethol-notifier', 'screenshots'),
-          path.join(__dirname, '..', 'ethol-notifier', 'screenshots'),
-          path.join(__dirname, '..', 'screenshots'),
-          '\\\\100.73.128.8\\Data\\AppData\\nginx\\config\\www\\ethol-notifier\\screenshots',
-          '\\\\100.73.128.8\\Data\\AppData\\ethol-backend\\screenshots',
-          '/DATA/AppData/nginx/config/www/ethol-notifier/screenshots',
-          '/DATA/AppData/ethol-backend/screenshots',
-        ];
-
-        // Pastikan posisi scroll berada di area atas (kartu matakuliah & tabel history)
-        try {
-          await ethPage.evaluate(() => window.scrollTo(0, 0));
-          await delay(600);
-        } catch (_) {}
-
-        let primarySaved = false;
-        let savedFilename = null;
-        for (const d of candidateDirs) {
-          try {
-            if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-            const sp = path.join(d, fn);
-            if (!primarySaved) {
-              await ethPage.screenshot({ path: sp, type: 'jpeg', quality: 90 });
-              primarySaved = true;
-              savedFilename = fn;
-            } else if (savedFilename && fs.existsSync(path.join(candidateDirs[0], fn))) {
-              fs.copyFileSync(path.join(candidateDirs[0], fn), sp);
-            }
-          } catch (_) {}
-        }
-        if (savedFilename) {
-          log.info(`Screenshot bukti presensi tersimpan: ${savedFilename}`);
-        }
-        return savedFilename;
-      };
-
-      if (!presensiInfo.found) {
-        log.warn(`✗ Tombol Presensi tidak ditemukan di halaman ini.`);
-        absenHasil.push({ matakuliah, status: 'TIDAK_DITEMUKAN', url: courseUrl });
-      } else if (presensiInfo.disabled) {
-        // Tombol disabled atau terkunci (misal mahasiswa baru saja absen mandiri atau sesi presensi sudah tersimpan)
-        const attendanceAudit = await ethPage.evaluate(() => {
-          const bodyText = (document.body.innerText || '');
-          const now = new Date();
-          const day = String(now.getDate());
-          const monthNamesId = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-          const todayPattern = `${day} ${monthNamesId[now.getMonth()]} ${now.getFullYear()}`;
-          const isTodayRecorded = bodyText.includes(todayPattern);
-          const isLockedBtn = !!document.querySelector('[class*="Locked"], [class*="locked"], button[disabled]');
-          return {
-            todayPattern,
-            isTodayRecorded,
-            isLockedBtn
-          };
-        });
-
-        // Selalu ambil screenshot sebagai bukti visual absensi / kondisi terkini halaman
-        const screenshotFilename = await captureAttendanceScreenshot();
-        const ssTag = screenshotFilename ? ` [SCREENSHOT:${screenshotFilename}]` : '';
-
-        if (attendanceAudit.isTodayRecorded || attendanceAudit.isLockedBtn) {
-          log.success(`✓ PRESENSI TELAH TERCATAT HADIR! — ${matakuliah}${ssTag}`);
-          absenHasil.push({ matakuliah, status: 'SUKSES_TERCATAT', url: courseUrl, screenshot: screenshotFilename });
-        } else {
-          log.warn(`⊘ Tombol "${presensiInfo.text}" disabled. Sesi presensi belum/sudah tutup.${ssTag}`);
-          absenHasil.push({ matakuliah, status: 'DISABLED', url: courseUrl, screenshot: screenshotFilename });
-        }
-      } else {
-        // ─── Klik tombol presensi ────────────────────────────────────
-        log.info(`→ Mengklik tombol "${presensiInfo.text}"...`);
-
-        await ethPage.evaluate(() => {
-          for (const btn of document.querySelectorAll('button')) {
-            const txt = btn.innerText.trim().toLowerCase();
-            if ((txt === 'presensi' || txt.startsWith('presensi')) && !btn.disabled) {
-              btn.click();
-              return;
-            }
-          }
-        });
-
-        await delay(CONFIG.afterClick);
-
-        // ─── Handle modal konfirmasi jika ada ────────────────────────
-        const confirmResult = await ethPage.evaluate(() => {
-          const modalSels = ['[role="dialog"]', '.modal', '[class*="modal"]', '[class*="dialog"]'];
-          for (const mSel of modalSels) {
-            const modal = document.querySelector(mSel);
-            if (!modal || modal.offsetParent === null) continue;
-            const btns = modal.querySelectorAll('button');
-            for (const btn of btns) {
-              const t = btn.innerText.trim().toLowerCase();
-              if (['ya', 'ok', 'konfirmasi', 'presensi', 'submit', 'hadir', 'lanjut'].some((kw) => t.includes(kw))) {
-                btn.click();
-                return btn.innerText.trim();
-              }
-            }
           }
           return null;
-        });
+        }, item.matakuliah);
 
-        if (confirmResult) {
-          log.info(`  Modal konfirmasi: "${confirmResult}" — diklik`);
-          await delay(CONFIG.afterClick);
+        if (cardCoords) {
+          log.info(`Mengklik tombol "Akses Kuliah >" pada kartu: "${cardCoords.cardText.replace(/\n+/g, ' ')}"`);
+          await ethPage.mouse.click(cardCoords.x, cardCoords.y);
+          await delay(CONFIG.actionDelay);
         }
 
-        // Jeda agar antarmuka ETHOL me-refresh status kehadiran dan tabel "History Presensi Saya"
-        await delay(2000);
+        // Tunggu hingga tabel "History Presensi Saya" dan kotak detail mata kuliah termuat
+        await ethPage.waitForFunction(() => {
+          const t = document.body.innerText || '';
+          return t.includes('History Presensi Saya') || t.includes('Peserta Kuliah') || window.location.href.includes('detail');
+        }, { timeout: 12000 }).catch(() => {});
+      }
 
-        // ─── Verifikasi sukses ────────────────────────────────────────
-        const isSuccess = await ethPage.evaluate(() => {
-          const bodyText = (document.body.innerText || '').toLowerCase();
-          const keywords = ['berhasil', 'sukses', 'hadir', 'success', 'tercatat', 'presensi berhasil', 'sudah presensi'];
-          return keywords.some((kw) => bodyText.includes(kw));
-        });
+      // 4. Cari dan tekan elemen di dalam <div class="_cardBodyFlex1_eo805_1473">:
+      // Tombol Presensi: <button ... class="_btnBukaPresensiDarkLocked_eo805_1740">Presensi</button>
+      const presensiActionResult = await ethPage.evaluate(() => {
+        const cardBody = document.querySelector('div[class*="_cardBodyFlex1_"], [class*="_cardBodyFlex1"]') || document.body;
+        const presensiBtn = cardBody.querySelector('button[class*="_btnBukaPresensi"], button[class*="btnBukaPresensi"]') ||
+                            Array.from(cardBody.querySelectorAll('button')).find((b) => (b.innerText || '').trim().toLowerCase() === 'presensi');
 
-        // ─── Ambil screenshot bukti presensi ─────────────────────────
-        const screenshotFilename = await captureAttendanceScreenshot();
-        const ssTag = screenshotFilename ? ` [SCREENSHOT:${screenshotFilename}]` : '';
+        if (presensiBtn) {
+          const isDisabled = presensiBtn.disabled || presensiBtn.getAttribute('disabled') !== null;
+          const title = presensiBtn.getAttribute('title') || '';
+          const cls = presensiBtn.className || '';
 
-        if (isSuccess) {
-          log.success(`✓ PRESENSI BERHASIL! — ${matakuliah}${ssTag}`);
-          absenHasil.push({ matakuliah, status: 'SUKSES', url: courseUrl, screenshot: screenshotFilename });
+          // Tekan tombol presensi
+          try { presensiBtn.click(); } catch (_) {}
+
+          return {
+            found: true,
+            clicked: !isDisabled,
+            disabled: isDisabled,
+            title,
+            className: cls,
+            text: presensiBtn.innerText.trim(),
+          };
+        }
+
+        return { found: false, clicked: false, disabled: true, title: 'Tidak ditemukan' };
+      });
+
+      if (presensiActionResult.found) {
+        if (presensiActionResult.disabled) {
+          log.info(`Tombol Presensi ditekan: Status terkunci "${presensiActionResult.title || 'Belum ada sesi presensi yang dibuka dosen'}".`);
         } else {
-          log.success(`✓ PRESENSI TELAH DILAKUKAN — ${matakuliah}${ssTag}`);
-          absenHasil.push({ matakuliah, status: 'SUKSES', url: courseUrl, screenshot: screenshotFilename });
+          log.info('Tombol Presensi aktif berhasil ditekan!');
         }
       }
 
-      // ─── Kembali ke beranda untuk item berikutnya ─────────────────
-      if (idx < presensiIndices.length - 1) {
-        await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/beranda', {
-          waitUntil: 'networkidle2',
-          timeout:   CONFIG.navTimeout,
-        });
-        await delay(CONFIG.shortWait);
-        await ethPage.waitForSelector(bellSel, { timeout: CONFIG.elemTimeout });
-        await ethPage.click(bellSel);
-        await delay(CONFIG.shortWait);
+      await delay(CONFIG.shortWait);
+
+      // Tangani pop-up konfirmasi jika ada (Ya / Hadir / Konfirmasi)
+      await ethPage.evaluate(() => {
+        const modalBtns = document.querySelectorAll('.modal button, [role="dialog"] button');
+        for (const mb of modalBtns) {
+          const t = (mb.innerText || '').trim().toLowerCase();
+          if (['ya', 'ok', 'konfirmasi', 'presensi', 'hadir'].some((k) => t.includes(k))) {
+            mb.click();
+            return;
+          }
+        }
+      });
+
+      await delay(CONFIG.shortWait);
+
+      // 5. Ekstrak data NIP, Dosen, Jadwal, Presensi Terakhir Dosen dari table._tblInfoMk_
+      const detailInfo = await ethPage.evaluate((fallbackMK) => {
+        const info = {
+          nip: '',
+          dosen: '',
+          jadwal: '',
+          presensiTerakhirDosen: '',
+          matakuliah: fallbackMK,
+        };
+
+        const rows = Array.from(document.querySelectorAll('table[class*="_tblInfoMk_"] tr, [class*="_tblInfoMk"] tr'));
+        for (const r of rows) {
+          const label = (r.querySelector('td[class*="_tblInfoMkLabel_"], [class*="_tblInfoMkLabel"]')?.innerText || '').trim().toLowerCase();
+          const val = (r.querySelector('td[class*="_tblInfoMkVal_"], [class*="_tblInfoMkVal"]')?.innerText || '').trim();
+          if (label.includes('nip')) info.nip = val;
+          else if (label.includes('presensi terakhir')) info.presensiTerakhirDosen = val;
+          else if (label.includes('nama dosen') || label === 'dosen') info.dosen = val;
+          else if (label.includes('jadwal')) info.jadwal = val.replace(/\s+/g, ' ');
+        }
+
+        const hList = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, div'));
+        const tag = hList.find((el) => (el.innerText || '').trim().toUpperCase() === 'MATA KULIAH');
+        if (tag && tag.nextElementSibling) {
+          const name = (tag.nextElementSibling.innerText || '').trim();
+          if (name.length > 2 && name.length < 80) info.matakuliah = name;
+        }
+
+        return info;
+      }, item.matakuliah);
+
+      // 6. "setelah itu SS" -> Ambil tangkapan layar bukti presensi pada halaman Detail Matakuliah
+      const verifiedMK = detailInfo.matakuliah || item.matakuliah;
+      const ssFile = await captureProofScreenshot(ethPage, verifiedMK);
+      const ssTag = ssFile ? ` [SCREENSHOT:${ssFile}]` : '';
+
+      // Tampilkan di konsol histori dengan nama matakuliah, dosen, dan waktu presensi
+      log.success(`✓ Presensi Berhasil Tercatat — ${verifiedMK} | Dosen: ${detailInfo.dosen || 'Dosen Pengampu'} | Waktu: ${detailInfo.presensiTerakhirDosen || item.timeAgo}${ssTag}`);
+
+      presensiResults.push({
+        matakuliah: verifiedMK,
+        dosen: detailInfo.dosen,
+        nip: detailInfo.nip,
+        jadwal: detailInfo.jadwal,
+        presensiTerakhirDosen: detailInfo.presensiTerakhirDosen,
+        screenshot: ssFile,
+      });
+
+      // Kembali ke beranda untuk proses selanjutnya
+      await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/beranda', { waitUntil: 'networkidle2', timeout: CONFIG.navTimeout }).catch(() => {});
+      await delay(CONFIG.shortWait);
+    }
+
+    // Pastikan halaman kembali ke beranda bersih sebelum memulai pemindaian tugas
+    await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/beranda', { waitUntil: 'networkidle2', timeout: CONFIG.navTimeout }).catch(() => {});
+    await delay(CONFIG.shortWait);
+
+    // ──────────────────────────────────────────────────────────
+    // LANGKAH 3: Pemindaian Tugas Baru (Batas 7 Hari) & Belum Dikumpulkan
+    // ──────────────────────────────────────────────────────────
+    log.step(3, 'Memindai Tugas Baru dalam batas 7 hari yang belum dikumpulkan...');
+    await openNotificationPanel();
+    await selectNotificationFilter('Tugas');
+
+    // Pindai Notifikasi Tugas dari panel (dengan toleransi jeda muat AJAX)
+    let taskNotifs = [];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      taskNotifs = await getNotificationCards('tugas');
+      if (taskNotifs.length > 0) break;
+      await delay(1500);
+    }
+    if (taskNotifs.length === 0) {
+      await selectNotificationFilter('Semua');
+      taskNotifs = await getNotificationCards('tugas');
+    }
+
+    // Saring notifikasi tugas batas 7 hari (<p class="_notifWaktu_eo805_1307">...)
+    const freshTasks = taskNotifs.filter((t) => isWithin7Days(t.timeAgo));
+    log.info(`Ditemukan ${freshTasks.length} notifikasi tugas dalam batas 7 hari.`);
+
+    // Lacak tugas agar tidak ada duplikasi pemindaian
+    const seenTasks = new Set();
+    const uniqueFreshTasks = [];
+    for (const t of freshTasks) {
+      const taskSig = `${t.matakuliah}_${t.judul}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!seenTasks.has(taskSig)) {
+        seenTasks.add(taskSig);
+        uniqueFreshTasks.push(t);
       }
     }
+
+    for (let j = 0; j < uniqueFreshTasks.length; j++) {
+      const taskItem = uniqueFreshTasks[j];
+      log.info(`Memeriksa status pengumpulan: "${taskItem.judul}" (${taskItem.matakuliah}) [${taskItem.timeAgo}]`);
+
+      await openNotificationPanel();
+      await selectNotificationFilter('Tugas');
+
+      // Cari elemen notifikasi target berdasarkan judul atau mata kuliah
+      await ethPage.evaluate((targetTitle, targetMK, targetWaktu, targetIdx) => {
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+        let target = notifEls.find((el) => {
+          const t = el.innerText || '';
+          return (targetTitle && t.includes(targetTitle)) || (targetMK && t.includes(targetMK));
+        });
+
+        if (!target && notifEls.length > 0) {
+          target = notifEls.find((el) => {
+            const w = (el.querySelector('p[class*="_notifWaktu_"], [class*="_notifWaktu"]')?.innerText || '').trim();
+            return w === targetWaktu;
+          });
+        }
+
+        if (!target && notifEls[targetIdx]) target = notifEls[targetIdx];
+
+        if (target) {
+          target.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
+      }, taskItem.judul, taskItem.matakuliah, taskItem.timeAgo, j);
+
+      await delay(300);
+
+      // Klik mouse koordinat
+      const box = await ethPage.evaluate((targetTitle, targetMK, targetIdx) => {
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+        let target = notifEls.find((el) => {
+          const t = el.innerText || '';
+          return (targetTitle && t.includes(targetTitle)) || (targetMK && t.includes(targetMK));
+        }) || notifEls[targetIdx];
+
+        if (target) {
+          const r = target.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }
+        return null;
+      }, taskItem.judul, taskItem.matakuliah, j);
+
+      if (box && box.x > 0 && box.y > 0) {
+        await ethPage.mouse.click(box.x, box.y);
+      }
+
+      await ethPage.evaluate((targetTitle, targetMK, targetIdx) => {
+        let notifEls = Array.from(document.querySelectorAll('div[class*="_notifItemLink_"], [class*="_notifItemLink"]'));
+        let target = notifEls.find((el) => {
+          const t = el.innerText || '';
+          return (targetTitle && t.includes(targetTitle)) || (targetMK && t.includes(targetMK));
+        }) || notifEls[targetIdx];
+
+        if (target) {
+          target.click();
+          const childLink = target.querySelector('a, button, div[class*="Link"]');
+          if (childLink) childLink.click();
+        }
+      }, taskItem.judul, taskItem.matakuliah, j);
+
+      await delay(CONFIG.actionDelay);
+
+      // Verifikasi apakah tugas SUDAH atau BELUM dikumpulkan
+      const taskAudit = await ethPage.evaluate(() => {
+        // 1. Ekstraksi Deadline dari elemen p._text13Pre0_eo805_869 / p[class*="_text13Pre0_"]
+        let deadline = '';
+        const dlElements = Array.from(document.querySelectorAll('p[class*="_text13Pre0_"], p._text13Pre0_eo805_869, [class*="_text13Pre0"]'));
+        let dlP = dlElements.find((el) => (el.innerText || '').toLowerCase().includes('deadline'));
+        if (!dlP) {
+          dlP = Array.from(document.querySelectorAll('p, div, span')).find((el) => {
+            const t = (el.innerText || '').trim();
+            return t.toLowerCase().startsWith('deadline') || t.toLowerCase().includes('deadline :');
+          });
+        }
+
+        if (dlP) {
+          // Ambil isi span tebal: <span style="font-weight: 700;">Kamis, 01 Oktober 2026 - 16:00</span>
+          const boldSpan = dlP.querySelector('span[style*="font-weight"], span');
+          if (boldSpan && boldSpan.innerText.trim()) {
+            deadline = boldSpan.innerText.trim();
+          } else {
+            const m = dlP.innerText.match(/deadline\s*:\s*([^\n\r]+)/i);
+            if (m) deadline = m[1].trim();
+            else deadline = dlP.innerText.replace(/deadline\s*:\s*/i, '').trim();
+          }
+        }
+
+        if (!deadline) {
+          const dlMatch = document.body.innerText.match(/(?:batas|deadline|tenggat|berakhir|tanggal berakhir)\s*:\s*([^\n\r]+)/i);
+          if (dlMatch) deadline = dlMatch[1].trim();
+        }
+
+        // 2. Ekstraksi Status Pengumpulan:
+        //    <span class="_badgeStatusGreen_eo805_1599 _badgeStatusPill_eo805_1597"><svg ...></svg>Sudah Dikumpulkan</span>
+        let isSubmitted = false;
+        let statusLabel = 'Belum Mengumpulkan';
+
+        // Deteksi badge status hijau (Sudah Dikumpulkan)
+        const greenBadge = document.querySelector('span[class*="_badgeStatusGreen_"], span._badgeStatusGreen_eo805_1599, [class*="_badgeStatusGreen"]');
+        const pillBadges = Array.from(document.querySelectorAll('span[class*="_badgeStatusPill_"], [class*="_badgeStatusPill"], [class*="_badgeStatus"]'));
+
+        if (greenBadge) {
+          isSubmitted = true;
+          statusLabel = (greenBadge.innerText || '').trim() || 'Sudah Dikumpulkan';
+        } else {
+          // Cek badge lainnya (misal merah/kuning atau badge status)
+          const matchedPill = pillBadges.find((b) => {
+            const txt = (b.innerText || '').toLowerCase();
+            return txt.includes('sudah') || txt.includes('belum') || txt.includes('dikumpulkan') || txt.includes('mengumpulkan');
+          });
+
+          if (matchedPill) {
+            const pText = (matchedPill.innerText || '').trim();
+            if (pText.toLowerCase().includes('sudah') || pText.toLowerCase().includes('selesai')) {
+              isSubmitted = true;
+              statusLabel = pText;
+            } else {
+              isSubmitted = false;
+              statusLabel = pText;
+            }
+          }
+        }
+
+        // Fallback deteksi teks & elemen pendukung
+        if (!isSubmitted) {
+          const text = (document.body.innerText || '').toLowerCase();
+          if (
+            text.includes('sudah dikumpulkan') ||
+            text.includes('sudah mengumpulkan') ||
+            text.includes('telah mengumpulkan') ||
+            text.includes('file terkirim') ||
+            text.includes('unduh jawaban') ||
+            text.includes('download jawaban') ||
+            text.includes('jawaban anda') ||
+            !!document.querySelector('a[href*="download-jawaban"], [class*="badge-success"]')
+          ) {
+            isSubmitted = true;
+            statusLabel = 'Sudah Dikumpulkan';
+          }
+        }
+
+        let dosen = '';
+        const dosenMatch = document.body.innerText.match(/(?:dosen|pengampu|nama dosen)\s*:\s*([^\n\r]+)/i);
+        if (dosenMatch) dosen = dosenMatch[1].trim();
+
+        return { isSubmitted, statusLabel, deadline, dosen, url: window.location.href };
+      });
+
+      if (taskAudit.isSubmitted) {
+        log.info(`  ✓ Tugas "${taskItem.judul}" SUDAH DIKUMPULKAN (${taskAudit.statusLabel}) [Deadline: ${taskAudit.deadline || '-'}]. Dilewati.`);
+      } else {
+        log.warn(`  ⚡ Tugas "${taskItem.judul}" BELUM DIKUMPULKAN! (${taskAudit.statusLabel}) [Deadline: ${taskAudit.deadline || '-'}]. Dicatat.`);
+        taskResults.push({
+          id: `task_${Date.now()}_${j}`,
+          title: taskItem.judul,
+          matakuliah: taskItem.matakuliah,
+          dosen: taskAudit.dosen || 'Dosen Pengampu',
+          deadline: taskAudit.deadline || 'Batas 7 Hari',
+          deadline_indonesia: formatIndonesianDate(taskAudit.deadline),
+          hTag: calculateHTag(taskAudit.deadline),
+          status: taskAudit.statusLabel || 'Belum Mengumpulkan',
+          timeAgo: taskItem.timeAgo,
+          url: taskAudit.url,
+        });
+      }
+
+      // Kembali ke beranda
+      await ethPage.goto(CONFIG.baseUrl + 'mahasiswa/beranda', { waitUntil: 'networkidle2', timeout: CONFIG.navTimeout }).catch(() => {});
+      await delay(CONFIG.shortWait);
+    }
+
+    // Simpan hasil tugas ke tasks.json
+    saveTasksToFile(taskResults);
+    log.info(`[TUGAS] Tersimpan ${taskResults.length} tugas dalam batas 7 hari yang belum dikumpulkan.`);
 
   } catch (err) {
-    log.error(`Error: ${err.message}`);
-    if (isDebug) console.error(err.stack);
-
-    // Pilar 4: Automated Visual Proof on Failure — Tangkap bukti visual saat terjadi galat
-    try {
-      const activePage = (ethPage && !ethPage.isClosed()) ? ethPage : (mainPage && !mainPage.isClosed() ? mainPage : null);
-      if (activePage) {
-        const errDir = path.join(__dirname, 'screenshots');
-        if (!fs.existsSync(errDir)) fs.mkdirSync(errDir, { recursive: true });
-        const errFile = `error_${Date.now()}.jpg`;
-        await activePage.screenshot({ path: path.join(errDir, errFile), type: 'jpeg', quality: 75 });
-        log.warn(`[DIAGNOSTIK] Tangkapan layar galat disimpan otomatis: ${errFile}`);
-      }
-    } catch (_) {}
+    log.error(`Kendala pada proses presensi & tugas: ${err.message}`);
   } finally {
-    // Pilar 3: Anti-Zombie Teardown — Jamin logout & penutupan browser tidak pernah macet
     if (ethPage && !ethPage.isClosed()) {
-      try {
-        await Promise.race([
-          performLogout(ethPage),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Logout melebihi batas waktu (5 detik)')), 5000))
-        ]);
-      } catch (logoutErr) {
-        log.warn(`Proses logout dibatasi: ${logoutErr.message}`);
-      }
+      await performLogout(ethPage);
     }
-
-    if (browser) {
-      await browser.close().catch(() => {});
-      log.info('Browser Puppeteer ditutup secara aman (clean teardown).');
-    }
+    await browser.close();
+    log.info('Browser scraping ditutup secara aman.');
   }
 
-  // ──────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
   // LAPORAN AKHIR
-  // ──────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────
   log.divider();
-  console.log(`\n${C.bold}${C.cyan}  📋 LAPORAN HASIL AUTO ABSEN${C.reset}`);
+  console.log(`\n${C.bold}${C.cyan}  📋 REKAPITULASI PROSES PRESENSI INSTAN${C.reset}`);
   log.divider();
-
-  if (absenHasil.length === 0) {
-    log.warn('Tidak ada sesi presensi yang berhasil diproses.');
-  } else {
-    const statusLabel = {
-      SUKSES:          `${C.green}${C.bold}✓ SUKSES${C.reset}`,
-      MUNGKIN_SUKSES:  `${C.yellow}? MUNGKIN SUKSES (cek manual)${C.reset}`,
-      DISABLED:        `${C.yellow}⊘ DISABLED (sesi sudah tutup)${C.reset}`,
-      TIDAK_DITEMUKAN: `${C.gray}✗ TOMBOL PRESENSI TDK ADA${C.reset}`,
-      NAVIGASI_GAGAL:  `${C.red}✗ NAVIGASI GAGAL${C.reset}`,
-    };
-    absenHasil.forEach((h, i) => {
-      const label = statusLabel[h.status] || h.status;
-      console.log(`  [${i + 1}] ${label}`);
-      console.log(`       ${C.gray}${h.matakuliah}${C.reset}`);
-      if (isDebug) console.log(`       ${C.gray}${h.url}${C.reset}`);
-    });
-  }
-
+  console.log(`  Presensi Berhasil : ${C.bold}${C.green}${presensiResults.length}${C.reset}`);
+  console.log(`  Tugas Belum Kumpul: ${C.bold}${C.yellow}${taskResults.length}${C.reset}`);
   log.divider();
-  const berhasil = absenHasil.filter((h) => ['SUKSES', 'MUNGKIN_SUKSES'].includes(h.status)).length;
-  const gagal    = absenHasil.length - berhasil;
-  log.info(`Total: ${absenHasil.length} | ${C.green}Berhasil: ${berhasil}${C.reset} | ${gagal > 0 ? C.yellow : C.gray}Tidak aktif/gagal: ${gagal}${C.reset}`);
   console.log('');
 }
 
-// ─────────────────────────── ENTRY POINT ────────────────────────────
-runAutoAbsen().catch((err) => {
-  log.error(`Fatal: ${err.message}`);
-  process.exit(1);
-});
+// Jalankan jika dipanggil via CLI
+if (require.main === module) {
+  runAutoAbsenDanTugas().catch((err) => {
+    log.error(`Fatal: ${err.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = { runAutoAbsenDanTugas };

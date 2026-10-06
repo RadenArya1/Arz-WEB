@@ -4,7 +4,7 @@
    ========================================================= */
 
 (function initProyekWeb() {
-  const STORAGE_KEY = 'grimoire_web_projects_v12';
+  const STORAGE_KEY = 'grimoire_web_projects_v13';
 
   const DEFAULT_PROJECTS = [
     {
@@ -83,6 +83,17 @@
       target: 'lab/ (Localhost Only)',
       url: 'lab/index.html',
       tags: ['Sandbox', 'TestSprite', 'Web Tester', 'Localhost Only', 'Experimental']
+    },
+    {
+      id: 'proj_absen_inspector',
+      title: 'Visual Absen Inspector',
+      icon: 'fa-binoculars',
+      status: 'active',
+      statusLabel: 'Aktif',
+      desc: 'Halaman observasi visual alur proses absensi Ethol: login CAS, navigasi lonceng, filter 24 jam, klik kehadiran, dan rekaman screenshot.',
+      target: 'lab/proses-absen/ (Localhost Only)',
+      url: 'lab/proses-absen/index.html',
+      tags: ['Visual Inspector', 'Step-by-Step', 'Screenshots', 'Ethol PENS', 'Sandbox']
     }
   ];
 

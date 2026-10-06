@@ -211,6 +211,13 @@ function isPresensiSuccess($text) {
     return $hasPresensi && $hasSuccess;
 }
 
+function isCriticalError($text) {
+    if (!$text) return false;
+    $clean = preg_replace('/\\x1b\\[[0-9;]*m/', '', (string)$text);
+    $lower = strtolower(trim($clean));
+    return (strpos($lower, '[error]') !== false || strpos($lower, 'timeout') !== false || strpos($lower, 'login cas gagal') !== false || strpos($lower, 'fatal:') !== false);
+}
+
 // ── Penanganan Khusus logs agar memfilter presensi maksimal 1 hari (24 jam) & anti-duplikasi ──
 if ($path === "logs") {
     $nowMs = time() * 1000;

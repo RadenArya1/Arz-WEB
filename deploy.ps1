@@ -56,6 +56,9 @@ $prohibitedItems = @(
     "testsprite_vault.json",
     "rotate-testsprite.ps1",
     "testsprite-runner.js",
+    ".puppeteer_profile",
+    "Error_Absen",
+    "docs",
     ".git"
 )
 foreach ($item in $prohibitedItems) {
@@ -64,6 +67,10 @@ foreach ($item in $prohibitedItems) {
         Write-Host "[GUARD] Membersihkan berkas uji coba/tester di server Nginx: $item" -ForegroundColor Yellow
         Remove-Item -Path $remotePath -Recurse -Force -ErrorAction SilentlyContinue
     }
+}
+$etholProfile = Join-Path $targetDir "ethol-notifier\.puppeteer_profile"
+if (Test-Path $etholProfile) {
+    Remove-Item -Path $etholProfile -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "[1/3] Menyalin file portal inti website (index.html, keuangan.html)..." -ForegroundColor Yellow
@@ -84,7 +91,7 @@ $etholTarget = Join-Path $targetDir "ethol-notifier"
 if (!(Test-Path $etholTarget)) {
     New-Item -ItemType Directory -Path $etholTarget -Force | Out-Null
 }
-robocopy (Join-Path $sourceDir "ethol-notifier") $etholTarget /E /XD screenshots /R:2 /W:1 /NP /NFL /NDL
+robocopy (Join-Path $sourceDir "ethol-notifier") $etholTarget /E /XD screenshots .puppeteer_profile ethol-notifier Error_Absen /R:2 /W:1 /NP /NFL /NDL
 
 # Sinkronkan tangkapan layar otentik ke Nginx WWW agar HP dapat memuat gambar asli
 $nginxScreenshots = Join-Path $etholTarget "screenshots"
@@ -126,6 +133,9 @@ Copy-Item -Path (Join-Path $sourceDir "package.json") -Destination (Join-Path $e
 Copy-Item -Path (Join-Path $sourceDir "docker-compose.yml") -Destination (Join-Path $etholBackendTarget "docker-compose.yml") -Force
 if (Test-Path (Join-Path $sourceDir "ethol-notifier\ethol-agent.js")) {
     Copy-Item -Path (Join-Path $sourceDir "ethol-notifier\ethol-agent.js") -Destination (Join-Path $etholBackendTarget "ethol-agent.js") -Force
+}
+if (Test-Path (Join-Path $sourceDir "ethol-notifier\ethol-task-scraper.js")) {
+    Copy-Item -Path (Join-Path $sourceDir "ethol-notifier\ethol-task-scraper.js") -Destination (Join-Path $etholBackendTarget "ethol-task-scraper.js") -Force
 }
 if (Test-Path (Join-Path $sourceDir "ethol-notifier\tasks.json")) {
     Copy-Item -Path (Join-Path $sourceDir "ethol-notifier\tasks.json") -Destination (Join-Path $etholBackendTarget "tasks.json") -Force

@@ -503,9 +503,45 @@
       });
     }
 
+    // Modal & Accessible Focus Management
+    let lastActiveTrigger = null;
+    let pendingDeleteTxId = null;
+
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteTxName = document.getElementById('deleteTxName');
+    const deleteTxDate = document.getElementById('deleteTxDate');
+    const deleteTxAmount = document.getElementById('deleteTxAmount');
+    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+    const btnCancelDelete = document.getElementById('btnCancelDelete');
+    const btnCloseDeleteModal = document.getElementById('btnCloseDeleteModal');
+
+    function trapModalFocus(modalEl, e) {
+      if (!modalEl || modalEl.style.display !== 'flex') return;
+      const focusable = modalEl.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (!focusable.length) return;
+
+      const firstEl = focusable[0];
+      const lastEl = focusable[focusable.length - 1];
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            e.preventDefault();
+            lastEl.focus();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            e.preventDefault();
+            firstEl.focus();
+          }
+        }
+      }
+    }
+
     // Modal Lightbox Handlers
     function openImageModal(imgSrc, title, amount, date, ref, isIncome) {
       if (!imageModal || !modalFullImage) return;
+      lastActiveTrigger = document.activeElement;
       modalFullImage.src = imgSrc;
       if (modalTxTitle) modalTxTitle.textContent = title || 'Bukti Transaksi';
       if (modalTxSubtitle) modalTxSubtitle.textContent = date || '-';
@@ -515,11 +551,63 @@
         modalTxAmount.className = 'modal-footer-amount ' + (isIncome ? 'text-income' : 'text-expense');
       }
       imageModal.style.display = 'flex';
+      if (btnCloseModal) btnCloseModal.focus();
     }
 
     function closeImageModal() {
       if (imageModal) imageModal.style.display = 'none';
       if (modalFullImage) modalFullImage.src = '';
+      if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
+        lastActiveTrigger.focus();
+      }
+    }
+
+    // Modal Konfirmasi Hapus Handlers
+    function openDeleteConfirmModal(t) {
+      if (!deleteConfirmModal) {
+        if (confirm(`Hapus transaksi "${t.tujuan}"?`)) {
+          window.KeuanganStorage.deleteTransaction(t.id);
+          renderDashboard();
+        }
+        return;
+      }
+      lastActiveTrigger = document.activeElement;
+      pendingDeleteTxId = t.id;
+      if (deleteTxName) deleteTxName.textContent = t.tujuan || 'Tanpa Keterangan';
+      if (deleteTxDate) deleteTxDate.textContent = t.tanggal || '-';
+      if (deleteTxAmount) {
+        const isInc = t.arus === 'pemasukan';
+        deleteTxAmount.textContent = (isInc ? '+ ' : '- ') + formatRupiah(t.total);
+        deleteTxAmount.className = 'delete-tx-amount ' + (isInc ? 'text-income' : 'text-expense');
+      }
+      deleteConfirmModal.style.display = 'flex';
+      if (btnCancelDelete) btnCancelDelete.focus();
+    }
+
+    function closeDeleteConfirmModal() {
+      if (deleteConfirmModal) deleteConfirmModal.style.display = 'none';
+      pendingDeleteTxId = null;
+      if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
+        lastActiveTrigger.focus();
+      }
+    }
+
+    if (btnConfirmDelete) {
+      btnConfirmDelete.addEventListener('click', () => {
+        if (pendingDeleteTxId) {
+          window.KeuanganStorage.deleteTransaction(pendingDeleteTxId);
+          closeDeleteConfirmModal();
+          renderDashboard();
+        }
+      });
+    }
+
+    if (btnCancelDelete) btnCancelDelete.addEventListener('click', closeDeleteConfirmModal);
+    if (btnCloseDeleteModal) btnCloseDeleteModal.addEventListener('click', closeDeleteConfirmModal);
+    if (deleteConfirmModal) {
+      deleteConfirmModal.addEventListener('click', (e) => {
+        if (e.target === deleteConfirmModal) closeDeleteConfirmModal();
+      });
     }
 
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeImageModal);
@@ -528,10 +616,17 @@
         if (e.target === imageModal) closeImageModal();
       });
     }
+
+    // Global Modal Escape & Focus Trap
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeImageModal();
         closeMultiMonthModal();
+        closeDeleteConfirmModal();
+      } else if (e.key === 'Tab') {
+        trapModalFocus(imageModal, e);
+        trapModalFocus(multiMonthModal, e);
+        trapModalFocus(deleteConfirmModal, e);
       }
     });
 
@@ -722,14 +817,37 @@
       }
 
       if (filtered.length === 0) {
+        const isSelectedMonth = txPeriodScope === 'selected';
+        const emptyLabel = isSelectedMonth ? (currentMonthData ? currentMonthData.label : 'bulan terpilih') : 'filter yang diterapkan';
         txTableBody.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted);">
-              <i class="fa-solid fa-scroll" style="font-size: 1.8rem; margin-bottom: 10px; display:block; opacity: 0.5; color: var(--border-gold-glow);"></i>
-              Tidak ada catatan transaksi pada ${txPeriodScope === 'selected' ? (currentMonthData ? currentMonthData.label : 'bulan ini') : 'kriteria ini'}.
+            <td colspan="7" class="empty-state-cell">
+              <div class="table-empty-container">
+                <div class="empty-icon-ring">
+                  <i class="fa-solid fa-receipt"></i>
+                </div>
+                <h4 class="empty-title">Belum Ada Catatan Transaksi</h4>
+                <p class="empty-desc">
+                  Tidak ada transaksi yang tercatat pada <strong>${escapeHtml(emptyLabel)}</strong>. Unggah atau tempel struk bukti transfer untuk mulai mencatat secara otomatis.
+                </p>
+                <button type="button" class="btn-empty-cta" id="btnEmptyCtaPaste">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                  <span>Unggah Struk Sekarang</span>
+                </button>
+              </div>
             </td>
           </tr>
         `;
+        const btnCta = txTableBody.querySelector('#btnEmptyCtaPaste');
+        if (btnCta) {
+          btnCta.addEventListener('click', () => {
+            const dropzone = document.getElementById('receiptDropzone');
+            if (dropzone) {
+              dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              dropzone.focus();
+            }
+          });
+        }
         return;
       }
 
@@ -795,13 +913,10 @@
           });
         }
 
-        // Event Hapus Transaksi
+        // Event Hapus Transaksi (Konfirmasi Modal Halus)
         const btnDel = row.querySelector('.btn-table-del');
         btnDel.addEventListener('click', () => {
-          if (confirm(`Hapus transaksi "${t.tujuan}" (${amountPrefix}${formatRupiah(t.total)})?`)) {
-            window.KeuanganStorage.deleteTransaction(t.id);
-            renderDashboard();
-          }
+          openDeleteConfirmModal(t);
         });
 
         txTableBody.appendChild(row);
@@ -828,16 +943,17 @@
             {
               data: [monthData.income, monthData.expense],
               backgroundColor: [
-                'rgba(34, 197, 94, 0.88)',
-                'rgba(239, 68, 68, 0.88)'
+                'rgba(16, 185, 129, 0.85)',
+                'rgba(239, 68, 68, 0.85)'
               ],
               borderColor: [
-                '#4ade80',
+                '#34d399',
                 '#f87171'
               ],
               borderWidth: 1.5,
-              borderRadius: 6,
-              barPercentage: 0.65
+              borderRadius: 8,
+              borderSkipped: false,
+              barPercentage: 0.58
             }
           ]
         },
@@ -847,6 +963,16 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: 'rgba(6, 16, 10, 0.95)',
+              titleColor: '#f0fdf4',
+              titleFont: { size: 12, family: 'Plus Jakarta Sans', weight: '700' },
+              bodyColor: '#e2e8f0',
+              bodyFont: { size: 12, family: 'JetBrains Mono', weight: '600' },
+              borderColor: 'rgba(52, 211, 153, 0.35)',
+              borderWidth: 1,
+              padding: 10,
+              cornerRadius: 8,
+              boxPadding: 4,
               callbacks: {
                 title: function(items) {
                   return `${monthData.label} • ${items[0].label}`;
@@ -861,15 +987,16 @@
             x: {
               ticks: {
                 font: { size: 10, family: 'Plus Jakarta Sans', weight: '600' },
-                color: '#9eb8a1'
+                color: '#94a3b8'
               },
-              grid: { display: false }
+              grid: { display: false },
+              border: { display: false }
             },
             y: {
               beginAtZero: true,
               ticks: {
-                font: { size: 8 },
-                color: '#9eb8a1',
+                font: { size: 9, family: 'JetBrains Mono' },
+                color: '#64748b',
                 callback: function(val) {
                   if (val >= 1000000) return (val / 1000000) + 'jt';
                   if (val >= 1000) return (val / 1000) + 'k';
@@ -877,8 +1004,9 @@
                 }
               },
               grid: {
-                color: 'rgba(229, 193, 88, 0.09)'
-              }
+                color: 'rgba(255, 255, 255, 0.04)'
+              },
+              border: { display: false }
             }
           }
         }
@@ -896,13 +1024,18 @@
     // =========================================================
     function openMultiMonthModal() {
       if (!multiMonthModal) return;
+      lastActiveTrigger = document.activeElement;
       const { months, activeMonthKey } = window.KeuanganStorage.getAvailableMonths();
       renderMultiMonthModal(months, activeMonthKey);
       multiMonthModal.style.display = 'flex';
+      if (btnCloseMultiMonthModal) btnCloseMultiMonthModal.focus();
     }
 
     function closeMultiMonthModal() {
       if (multiMonthModal) multiMonthModal.style.display = 'none';
+      if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
+        lastActiveTrigger.focus();
+      }
     }
 
     function renderMultiMonthModal(months, activeMonthKey) {
