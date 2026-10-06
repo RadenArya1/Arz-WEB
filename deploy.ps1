@@ -58,6 +58,8 @@ $prohibitedItems = @(
     "testsprite-runner.js",
     ".puppeteer_profile",
     "Error_Absen",
+    "attended_keys.json",
+    "ethol-config.json",
     "docs",
     ".git"
 )
@@ -91,7 +93,7 @@ $etholTarget = Join-Path $targetDir "ethol-notifier"
 if (!(Test-Path $etholTarget)) {
     New-Item -ItemType Directory -Path $etholTarget -Force | Out-Null
 }
-robocopy (Join-Path $sourceDir "ethol-notifier") $etholTarget /E /XD screenshots .puppeteer_profile ethol-notifier Error_Absen /R:2 /W:1 /NP /NFL /NDL
+robocopy (Join-Path $sourceDir "ethol-notifier") $etholTarget /E /XD screenshots .puppeteer_profile ethol-notifier Error_Absen /XF ethol-config.json attended_keys.json /R:2 /W:1 /NP /NFL /NDL
 
 # Sinkronkan tangkapan layar otentik ke Nginx WWW agar HP dapat memuat gambar asli
 $nginxScreenshots = Join-Path $etholTarget "screenshots"

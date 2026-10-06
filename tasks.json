@@ -1,0 +1,18 @@
+{
+  "lastCheck": "2026-10-06T04:12:57.890Z",
+  "totalPending": 1,
+  "tasks": [
+    {
+      "id": "task_1791259977889_5_0",
+      "title": "dasar pemrograman java",
+      "matakuliah": "Workshop Pemrograman Lanjut",
+      "dosen": "Mike Yuliana",
+      "deadline": "2026-09-09 12:00:00",
+      "deadline_indonesia": "Rabu, 9 September 2026 - 12:00",
+      "hTag": "Terlambat",
+      "status": "Belum Mengumpulkan",
+      "timeAgo": "Mendekati Tenggat",
+      "url": "https://ethol.pens.ac.id/mahasiswa/matakuliah/221136/tugas"
+    }
+  ]
+}

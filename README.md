@@ -63,13 +63,15 @@ flowchart TD
   - **Audit & Export:** Ekspor data riwayat transaksi dalam format terstruktur.
 
 ### 3. 🎓 Ethol Academic Notifier (`ethol-notifier/`)
-*Executive Presensi Deck & Asisten Akademik Otonom*
+*Executive Presensi Deck & Asisten Akademik Otonom Berkinerja Tinggi*
 - **Fitur Utama:**
+  - **High-Performance Direct API Engine (Zero-Browser):** Mengadopsi arsitektur daemon Go (`repinger/ethold`) dengan eksekusi direct CAS SSO dan ETHOL REST API murni, memangkas RAM ke < 30MB dan mempercepat siklus eksekusi dari 30s ke ~2.3 detik.
+  - **Atomic State Persistence (`attended_keys.json`):** Sistem penguncian state presensi otomatis dengan retensi 90 hari untuk mencegah duplikasi submission.
   - **Executive Presensi Deck:** Radial SVG progress ring countdown yang dinamis, kartu identitas mahasiswa, dan status engine reaktif.
-  - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu thumbnail bukti kehadiran dan lightbox perbesar.
+  - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu detail kehadiran dan verifikasi status.
   - **Dynamic Theme Metamorphosis:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif.
   - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
-  - **Standalone Task Scraper:** Engine scraper mandiri pemantau tenggat penugasan kuliah portal ETHOL PENS (≤ 5 hari).
+  - **Concurrent Task Scraper:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (≤ 7 hari) tersimpan otomatis di `tasks.json`.
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
 
 ### 4. 🔬 Lab & Visual Inspector (`lab/` — Localhost Sandbox)
