@@ -55,12 +55,15 @@ flowchart TD
   - **Aura & Glassmorphism Design:** Tampilan modern dengan efek frosted glass, gradient glow, dan micro-interaction responsif.
 
 ### 2. 💎 Arcanum Finance (`keuangan.html`)
-*Sistem Pembukuan & Manajemen Keuangan Personal*
+*Executive FinTech Cockpit & Smart Receipt Parser*
 - **Fitur Utama:**
-  - **Comprehensive Ledger:** Pencatatan arus kas masuk (*income*) dan keluar (*expense*) dengan filter kategori cerdas.
-  - **Visual Analytics:** Grafik distribusi pengeluaran, saldo berjalan (*running balance*), dan visualisasi rasio hemat.
-  - **Monthly Book-Closing (*Tutup Buku*):** Fitur penguncian buku bulanan terstruktur untuk pelaporan berkala.
-  - **Audit & Export:** Ekspor data riwayat transaksi dalam format terstruktur.
+  - **Dual-Stream Cashflow Ledger:** Pencatatan arus kas murni masuk (*inflow*) dan keluar (*outflow*) tanpa beban kategori kompleks.
+  - **AI OCR Vision (Tesseract.js):** Ekstraksi teks struk transfer & nota belanja otomatis via clipboard paste (`Ctrl + V`) dan drag-drop.
+  - **Smart Gmail BCA Auto-Sync (OAuth 2.0 Client-Side):** Integrasi resmi Google Identity Services (GIS) tanpa backend perantara (Zero-Backend Token Leakage).
+  - **Auto-Check Loop Engine (Mekanisme Seperti Auto Absen):** Pemindaian latar belakang berkala setiap 3 menit (180 detik) dan instant check saat tab browser aktif kembali.
+  - **Otomatis Input ke Kas:** Transaksi BCA resmi (QRIS, m-Transfer, KlikBCA) langsung tercatat ke Pemasukan/Pengeluaran & Saldo dengan notifikasi chime audio-visual.
+  - **Direct Gmail Display:** Tampilan bilah minimalis yang langsung menyajikan alamat email akun Gmail pengguna saja dengan font monospace elegan.
+  - **Dual-Box Multi-Month Analytics:** Komparasi visual berdampingan antara bulan pilihan dan bulan berjalan via Chart.js dual bar.
 
 ### 3. 🎓 Ethol Academic Notifier (`ethol-notifier/`)
 *Executive Presensi Deck & Asisten Akademik Otonom Berkinerja Tinggi*

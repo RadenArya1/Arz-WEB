@@ -80,12 +80,57 @@
     // Elements - Review Card
     const parsedReviewCard = document.getElementById('parsedReviewCard');
     const reviewTotalVal = document.getElementById('reviewTotalVal');
+    const reviewAmountPrefix = document.getElementById('reviewAmountPrefix');
+    const reviewJenisSelect = document.getElementById('reviewJenisSelect');
     const reviewMerchantVal = document.getElementById('reviewMerchantVal');
     const reviewDateVal = document.getElementById('reviewDateVal');
     const btnSaveParsedTx = document.getElementById('btnSaveParsedTx');
     const btnClearParsedTx = document.getElementById('btnClearParsedTx');
     const btnToggleIncome = document.getElementById('btnToggleIncome');
     const btnToggleExpense = document.getElementById('btnToggleExpense');
+
+    // Elements - Gmail Sync UI & Review Card Extensions
+    const gmailSyncStrip = document.getElementById('gmailSyncStrip');
+    const gmailAccountEmail = document.getElementById('gmailAccountEmail');
+    const gmailStatusTitle = document.getElementById('gmailStatusTitle');
+    const gmailStatusSub = document.getElementById('gmailStatusSub');
+    const gmailStatusIcon = document.getElementById('gmailStatusIcon');
+    const btnGmailConnect = document.getElementById('btnGmailConnect');
+    const btnGmailConfig = document.getElementById('btnGmailConfig');
+    const btnGmailSync = document.getElementById('btnGmailSync');
+    const gmailLoopBadge = document.getElementById('gmailLoopBadge');
+    const btnGmailReview = document.getElementById('btnGmailReview');
+    const btnGmailReviewText = document.getElementById('btnGmailReviewText');
+    const btnGmailDisconnect = document.getElementById('btnGmailDisconnect');
+
+    // Elements - Gmail Connect Pop-up Modal
+    const gmailConnectModal = document.getElementById('gmailConnectModal');
+    const btnCloseGmailModal = document.getElementById('btnCloseGmailModal');
+    const btnCancelGmailModal = document.getElementById('btnCancelGmailModal');
+    const btnStartGoogleLogin = document.getElementById('btnStartGoogleLogin');
+    const gmailClientIdInput = document.getElementById('gmailClientIdInput');
+    const btnPasteClientId = document.getElementById('btnPasteClientId');
+    const btnCopyOrigin = document.getElementById('btnCopyOrigin');
+    const copyOriginText = document.getElementById('copyOriginText');
+    const currentOriginDisplay = document.getElementById('currentOriginDisplay');
+    const gmailModalAlert = document.getElementById('gmailModalAlert');
+    const gmailModalAlertText = document.getElementById('gmailModalAlertText');
+    const gmailModalAlertIcon = document.getElementById('gmailModalAlertIcon');
+    const gmailConnectedAccountBox = document.getElementById('gmailConnectedAccountBox');
+    const gmailConnectedEmailDisplay = document.getElementById('gmailConnectedEmailDisplay');
+    const btnGmailSwitchAccount = document.getElementById('btnGmailSwitchAccount');
+
+    const reviewCardTitle = document.getElementById('reviewCardTitle');
+    const reviewCardIcon = document.getElementById('reviewCardIcon');
+    const reviewSourceBadge = document.getElementById('reviewSourceBadge');
+    const reviewQueueCounter = document.getElementById('reviewQueueCounter');
+    const reviewWarningsBox = document.getElementById('reviewWarningsBox');
+    const btnSkipParsedTx = document.getElementById('btnSkipParsedTx');
+    const btnDismissParsedTx = document.getElementById('btnDismissParsedTx');
+    const btnSaveAllParsedTx = document.getElementById('btnSaveAllParsedTx');
+    const btnSaveAllParsedTxText = document.getElementById('btnSaveAllParsedTxText');
+    const chkGmailAutoInput = document.getElementById('chkGmailAutoInput');
+    const chkGmailAutoLoop = document.getElementById('chkGmailAutoLoop');
 
     // Table & Filters
     const txTableBody = document.getElementById('txTableBody');
@@ -165,25 +210,64 @@
     const kpiNetBadge = document.getElementById('kpiNetBadge');
     const kpiTxCount = document.getElementById('kpiTxCount');
 
-    // Helper: Update Cashflow Switcher State
-    function setReviewCardArus(arus) {
+    // Helper: Format Angka Ribuan Bersih (tanpa 'Rp' dan tanpa tanda +/-)
+    function formatNominalRibuan(num) {
+      if (!num || isNaN(num)) return '0';
+      return Math.round(Math.abs(num)).toLocaleString('id-ID');
+    }
+
+    // Helper: Update Cashflow Switcher State (Pemasukan vs Pengeluaran)
+    function setReviewCardArus(arus, keepJenis = false) {
       if (!currentParsedData) return;
       currentParsedData.arus = arus;
 
       if (arus === 'pemasukan') {
         if (btnToggleIncome) btnToggleIncome.classList.add('active');
         if (btnToggleExpense) btnToggleExpense.classList.remove('active');
+        if (reviewAmountPrefix) {
+          reviewAmountPrefix.textContent = '+';
+          reviewAmountPrefix.className = 'review-amount-prefix text-income';
+        }
         if (reviewTotalVal) {
-          reviewTotalVal.className = 'review-amount-text text-income';
-          reviewTotalVal.textContent = '+ ' + formatRupiah(currentParsedData.total);
+          reviewTotalVal.className = 'review-amount-val editable-field text-income';
+        }
+
+        // Otomatisasi Penyesuaian Jenis Transaksi jika sebelumnya jenis pengeluaran
+        if (!keepJenis && reviewJenisSelect) {
+          const curJenis = reviewJenisSelect.value;
+          const isExpenseSpecific = [
+            'Pembayaran QR', 'Transfer Bank', 'Transfer (BI FAST)', 
+            'Tarik Tunai (ATM)', 'Belanja & Konsumsi', 'Makanan & Minuman', 
+            'Pembayaran Tagihan'
+          ].includes(curJenis);
+          if (isExpenseSpecific || !curJenis || curJenis === 'Pembayaran Lainnya') {
+            reviewJenisSelect.value = 'Transfer Masuk';
+            currentParsedData.jenis = 'Transfer Masuk';
+          }
         }
       } else {
         if (btnToggleExpense) btnToggleExpense.classList.add('active');
         if (btnToggleIncome) btnToggleIncome.classList.remove('active');
-        if (reviewTotalVal) {
-          reviewTotalVal.className = 'review-amount-text text-expense';
-          reviewTotalVal.textContent = '- ' + formatRupiah(currentParsedData.total);
+        if (reviewAmountPrefix) {
+          reviewAmountPrefix.textContent = '-';
+          reviewAmountPrefix.className = 'review-amount-prefix text-expense';
         }
+        if (reviewTotalVal) {
+          reviewTotalVal.className = 'review-amount-val editable-field text-expense';
+        }
+
+        // Otomatisasi Penyesuaian Jenis Transaksi jika sebelumnya pemasukan
+        if (!keepJenis && reviewJenisSelect) {
+          const curJenis = reviewJenisSelect.value;
+          if (curJenis === 'Transfer Masuk' || curJenis === 'Gaji / Pendapatan') {
+            reviewJenisSelect.value = 'Transfer Bank';
+            currentParsedData.jenis = 'Transfer Bank';
+          }
+        }
+      }
+
+      if (reviewTotalVal) {
+        reviewTotalVal.textContent = formatNominalRibuan(currentParsedData.total || 0);
       }
     }
 
@@ -192,6 +276,47 @@
     }
     if (btnToggleExpense) {
       btnToggleExpense.addEventListener('click', () => setReviewCardArus('pengeluaran'));
+    }
+
+    // Interaktivitas Dropdown Jenis Transaksi
+    if (reviewJenisSelect) {
+      reviewJenisSelect.addEventListener('change', () => {
+        if (!currentParsedData) return;
+        const selectedJenis = reviewJenisSelect.value;
+        currentParsedData.jenis = selectedJenis;
+
+        // Jika user memilih 'Transfer Masuk' atau 'Gaji / Pendapatan', otomatis ubah arus ke Pemasukan (+)
+        if (selectedJenis === 'Transfer Masuk' || selectedJenis === 'Gaji / Pendapatan') {
+          setReviewCardArus('pemasukan', true);
+        } else {
+          // Jika memilih jenis pengeluaran (QRIS, ATM, Belanja, dll), otomatis ubah arus ke Pengeluaran (-)
+          setReviewCardArus('pengeluaran', true);
+        }
+      });
+    }
+
+    // Interaktivitas Input / Edit Nominal Langsung
+    if (reviewTotalVal) {
+      reviewTotalVal.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          reviewTotalVal.blur();
+        }
+      });
+
+      reviewTotalVal.addEventListener('blur', () => {
+        if (!currentParsedData) return;
+        const raw = reviewTotalVal.textContent.trim();
+        let cleaned = 0;
+        if (window.ReceiptParser && typeof window.ReceiptParser.cleanNominal === 'function') {
+          cleaned = window.ReceiptParser.cleanNominal(raw);
+        } else {
+          cleaned = parseInt(raw.replace(/[^0-9]/g, ''), 10) || 0;
+        }
+        currentParsedData.total = cleaned;
+        currentParsedData.nominal = Math.max(0, cleaned - (currentParsedData.biaya_admin || 0));
+        reviewTotalVal.textContent = formatNominalRibuan(cleaned);
+      });
     }
 
     // Set preview image helper
@@ -380,15 +505,51 @@
       });
     }
 
+    function resetReviewCardForOcr() {
+      if (reviewCardTitle) reviewCardTitle.textContent = 'Hasil Ekstraksi Struk Digital';
+      if (reviewCardIcon) reviewCardIcon.className = 'fa-solid fa-receipt';
+      if (reviewSourceBadge) reviewSourceBadge.style.display = 'none';
+      if (reviewQueueCounter) reviewQueueCounter.style.display = 'none';
+      if (reviewWarningsBox) {
+        reviewWarningsBox.style.display = 'none';
+        reviewWarningsBox.innerHTML = '';
+      }
+      if (btnSkipParsedTx) btnSkipParsedTx.style.display = 'none';
+      if (btnDismissParsedTx) btnDismissParsedTx.style.display = 'none';
+      if (btnSaveAllParsedTx) btnSaveAllParsedTx.style.display = 'none';
+      if (btnClearParsedTx) btnClearParsedTx.style.display = 'inline-flex';
+    }
+
     function handleTextParsing(text) {
       if (!window.ReceiptParser) return;
       const parsed = window.ReceiptParser.parseReceiptText(text);
 
       if (parsed && (parsed.total > 0 || currentImageProof)) {
         currentParsedData = parsed;
+        resetReviewCardForOcr();
 
-        // Set arus switcher & text color
-        setReviewCardArus(parsed.arus || 'pengeluaran');
+        // 1. Sinkronisasi Jenis Transaksi yang Terdeteksi
+        if (reviewJenisSelect) {
+          const detectedJenis = parsed.jenis || 'Pembayaran Lainnya';
+          let matchFound = false;
+          for (let i = 0; i < reviewJenisSelect.options.length; i++) {
+            if (reviewJenisSelect.options[i].value.toLowerCase() === detectedJenis.toLowerCase()) {
+              reviewJenisSelect.selectedIndex = i;
+              matchFound = true;
+              break;
+            }
+          }
+          if (!matchFound) {
+            const newOpt = document.createElement('option');
+            newOpt.value = detectedJenis;
+            newOpt.textContent = `⚡ ${detectedJenis}`;
+            newOpt.selected = true;
+            reviewJenisSelect.appendChild(newOpt);
+          }
+        }
+
+        // 2. Set arus switcher, nominal terformat, & text color
+        setReviewCardArus(parsed.arus || 'pengeluaran', true);
 
         if (reviewMerchantVal) {
           reviewMerchantVal.textContent = parsed.tujuan || (parsed.arus === 'pemasukan' ? 'Pengirim / Sumber Dana' : 'Tanpa Nama Merchant');
@@ -404,10 +565,125 @@
       }
     }
 
-    // Simpan Transaksi
+    /**
+     * Menampilkan item transaksi dari antrean Gmail pada Review Card yang sudah ada
+     */
+    function displayGmailQueueItem() {
+      if (typeof window.GmailSync === 'undefined') return;
+      const currentItem = window.GmailSync.getCurrentItem();
+      const queue = window.GmailSync.getQueue();
+
+      if (!currentItem) {
+        currentParsedData = null;
+        if (parsedReviewCard) parsedReviewCard.style.display = 'none';
+        return;
+      }
+
+      // Proteksi: jangan menimpa jika pengguna sedang memeriksa hasil scan OCR struk yang belum disimpan
+      if (currentParsedData && currentParsedData.sumber !== 'gmail' && (currentParsedData.total > 0 || currentImageProof)) {
+        const switchConfirm = confirm('Terdapat data struk foto yang sedang ditinjau. Beralih ke antrean transaksi Gmail?');
+        if (!switchConfirm) return;
+      }
+
+      currentParsedData = Object.assign({}, currentItem.tx);
+      currentImageProof = '';
+
+      // Sembunyikan lampiran thumbnail foto struk karena Gmail tidak membawa foto struk
+      if (reviewImagePreview) reviewImagePreview.style.display = 'none';
+
+      // 1. Sinkronisasi Jenis Transaksi dari Gmail
+      if (reviewJenisSelect) {
+        const detectedJenis = currentParsedData.jenis || 'Transaksi BCA';
+        let matchFound = false;
+        for (let i = 0; i < reviewJenisSelect.options.length; i++) {
+          if (reviewJenisSelect.options[i].value.toLowerCase() === detectedJenis.toLowerCase()) {
+            reviewJenisSelect.selectedIndex = i;
+            matchFound = true;
+            break;
+          }
+        }
+        if (!matchFound) {
+          const newOpt = document.createElement('option');
+          newOpt.value = detectedJenis;
+          newOpt.textContent = `📧 ${detectedJenis}`;
+          newOpt.selected = true;
+          reviewJenisSelect.appendChild(newOpt);
+        }
+      }
+
+      // 2. Set toggle arus & nominal
+      setReviewCardArus(currentParsedData.arus || 'pengeluaran', true);
+
+      if (reviewMerchantVal) {
+        reviewMerchantVal.textContent = currentParsedData.tujuan || '-';
+      }
+      if (reviewDateVal) {
+        reviewDateVal.textContent = currentParsedData.tanggal || '-';
+      }
+
+      // Perbarui header review card & identitas sumber Gmail
+      if (reviewCardTitle) reviewCardTitle.textContent = 'Hasil Deteksi Transaksi BCA';
+      if (reviewCardIcon) reviewCardIcon.className = 'fa-solid fa-envelope';
+      if (reviewSourceBadge) reviewSourceBadge.style.display = 'inline-flex';
+
+      const currentIndex = queue.findIndex(q => q.messageId === currentItem.messageId);
+      if (reviewQueueCounter) {
+        reviewQueueCounter.style.display = 'inline-flex';
+        reviewQueueCounter.textContent = `${currentIndex >= 0 ? currentIndex + 1 : 1} dari ${queue.length}`;
+      }
+
+      // Tampilkan daftar peringatan (warnings) jika ada
+      if (reviewWarningsBox) {
+        if (currentItem.warnings && currentItem.warnings.length > 0) {
+          reviewWarningsBox.innerHTML = currentItem.warnings
+            .map(w => `<div class="review-warning-item"><i class="fa-solid fa-triangle-exclamation"></i> <span>${escapeHtml(w)}</span></div>`)
+            .join('');
+          reviewWarningsBox.style.display = 'flex';
+        } else {
+          reviewWarningsBox.style.display = 'none';
+          reviewWarningsBox.innerHTML = '';
+        }
+      }
+
+      // Tampilkan tombol kontrol antrean Gmail
+      if (btnSkipParsedTx) btnSkipParsedTx.style.display = queue.length > 1 ? 'inline-flex' : 'none';
+      if (btnDismissParsedTx) btnDismissParsedTx.style.display = 'inline-flex';
+      if (btnClearParsedTx) btnClearParsedTx.style.display = 'inline-flex';
+      if (btnSaveAllParsedTx) {
+        btnSaveAllParsedTx.style.display = queue.length > 1 ? 'inline-flex' : 'none';
+        if (btnSaveAllParsedTxText) {
+          btnSaveAllParsedTxText.textContent = `Simpan Semua (${queue.length})`;
+        }
+      }
+
+      if (parsedReviewCard) {
+        parsedReviewCard.style.display = 'flex';
+        parsedReviewCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // Simpan Transaksi (OCR Struk maupun Gmail)
     if (btnSaveParsedTx) {
       btnSaveParsedTx.addEventListener('click', () => {
         if (!currentParsedData) return;
+
+        // Ambil nominal terkini jika diedit di #reviewTotalVal
+        if (reviewTotalVal) {
+          const raw = reviewTotalVal.textContent.trim();
+          let cleaned = 0;
+          if (window.ReceiptParser && typeof window.ReceiptParser.cleanNominal === 'function') {
+            cleaned = window.ReceiptParser.cleanNominal(raw);
+          } else {
+            cleaned = parseInt(raw.replace(/[^0-9]/g, ''), 10) || 0;
+          }
+          currentParsedData.total = cleaned;
+          currentParsedData.nominal = Math.max(0, cleaned - (currentParsedData.biaya_admin || 0));
+        }
+
+        // Ambil jenis transaksi terkini dari dropdown
+        if (reviewJenisSelect) {
+          currentParsedData.jenis = reviewJenisSelect.value;
+        }
 
         // Ambil nilai pihak / keterangan jika diedit langsung oleh pengguna di kartu pratinjau
         if (reviewMerchantVal) {
@@ -425,8 +701,11 @@
           }
         }
 
-        // Lampirkan foto bukti transaksi
+        // Lampirkan foto bukti transaksi (jika ada dari OCR)
         currentParsedData.bukti_gambar = currentImageProof || '';
+
+        const isGmailSource = (currentParsedData.sumber === 'gmail');
+        const gmailMsgId = isGmailSource ? currentParsedData.gmail_message_id : null;
 
         window.KeuanganStorage.addTransaction(currentParsedData);
 
@@ -440,15 +719,69 @@
           selectedMonthKey = currentParsedData.tanggal.substring(0, 7);
         }
 
+        // Jika transaksi dari Gmail, tandai 'saved' di processed map
+        if (isGmailSource && gmailMsgId && window.GmailSync) {
+          window.GmailSync.markItemSaved(gmailMsgId);
+        }
+
         // Reset input & render ulang
         setProofImage('');
         currentParsedData = null;
-        if (parsedReviewCard) parsedReviewCard.style.display = 'none';
-        renderDashboard();
+
+        // Jika masih ada item tersisa di antrean Gmail, langsung tampilkan berikutnya otomatis
+        if (isGmailSource && window.GmailSync && window.GmailSync.getQueue().length > 0) {
+          renderDashboard();
+          displayGmailQueueItem();
+        } else {
+          if (parsedReviewCard) parsedReviewCard.style.display = 'none';
+          renderDashboard();
+        }
       });
     }
 
-    // Batal Input
+    // Tombol Abaikan Transaksi Gmail (Menandai 'dismissed')
+    if (btnDismissParsedTx) {
+      btnDismissParsedTx.addEventListener('click', () => {
+        if (!currentParsedData) return;
+        if (currentParsedData.sumber === 'gmail' && currentParsedData.gmail_message_id && window.GmailSync) {
+          window.GmailSync.markItemDismissed(currentParsedData.gmail_message_id);
+          if (window.GmailSync.getQueue().length > 0) {
+            displayGmailQueueItem();
+          } else {
+            currentParsedData = null;
+            if (parsedReviewCard) parsedReviewCard.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    // Tombol Simpan Semua Transaksi Gmail Sekaligus
+    if (btnSaveAllParsedTx) {
+      btnSaveAllParsedTx.addEventListener('click', () => {
+        if (window.GmailSync && typeof window.GmailSync.saveAllQueueItems === 'function') {
+          const count = window.GmailSync.saveAllQueueItems();
+          if (count > 0) {
+            currentParsedData = null;
+            if (parsedReviewCard) parsedReviewCard.style.display = 'none';
+            renderDashboard();
+            if (typeof playMagicChime === 'function') playMagicChime();
+          }
+        }
+      });
+    }
+
+    // Tombol Lewati Transaksi Gmail (Pindah ke item berikutnya tanpa menghapus antrean)
+    if (btnSkipParsedTx) {
+      btnSkipParsedTx.addEventListener('click', () => {
+        if (!currentParsedData) return;
+        if (currentParsedData.sumber === 'gmail' && window.GmailSync) {
+          window.GmailSync.skipItem();
+          displayGmailQueueItem();
+        }
+      });
+    }
+
+    // Batal Input (Tutup Review Card)
     if (btnClearParsedTx) {
       btnClearParsedTx.addEventListener('click', () => {
         setProofImage('');
@@ -610,6 +943,190 @@
       });
     }
 
+    // Modal Hubungkan Gmail Handlers
+    function showGmailModalAlert(message, type = 'warning') {
+      if (!gmailModalAlert || !gmailModalAlertText) return;
+      gmailModalAlertText.innerHTML = message;
+      gmailModalAlert.className = 'gmail-modal-alert ' + type;
+      if (gmailModalAlertIcon) {
+        if (type === 'error') {
+          gmailModalAlertIcon.className = 'fa-solid fa-triangle-exclamation';
+        } else if (type === 'success') {
+          gmailModalAlertIcon.className = 'fa-solid fa-circle-check';
+        } else {
+          gmailModalAlertIcon.className = 'fa-solid fa-circle-info';
+        }
+      }
+      gmailModalAlert.style.display = 'flex';
+      setTimeout(() => {
+        gmailModalAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+
+    function hideGmailModalAlert() {
+      if (gmailModalAlert) {
+        gmailModalAlert.style.display = 'none';
+      }
+    }
+
+    function openGmailConnectModal(initialAlertMsg = '', alertType = 'warning') {
+      if (!gmailConnectModal) return;
+      lastActiveTrigger = document.activeElement;
+
+      // Sinkronkan origin browser saat ini
+      if (currentOriginDisplay) {
+        currentOriginDisplay.textContent = window.location.origin;
+      }
+
+      // Ambil Client ID yang sudah tersimpan jika ada
+      if (gmailClientIdInput && window.GmailConfig) {
+        const curId = window.GmailConfig.getClientId ? window.GmailConfig.getClientId() : '';
+        gmailClientIdInput.value = curId || '';
+      }
+
+      // Sinkronkan state checkbox auto-input
+      if (chkGmailAutoInput && window.GmailSync && typeof window.GmailSync.isAutoInputEnabled === 'function') {
+        chkGmailAutoInput.checked = window.GmailSync.isAutoInputEnabled();
+      }
+
+      // Sinkronkan state checkbox auto-check berkala (seperti auto absen)
+      if (chkGmailAutoLoop && window.GmailSync && typeof window.GmailSync.isAutoSyncLoopEnabled === 'function') {
+        chkGmailAutoLoop.checked = window.GmailSync.isAutoSyncLoopEnabled();
+      }
+
+      // Periksa apakah akun sudah terhubung & terkunci permanen
+      if (gmailConnectedAccountBox && gmailConnectedEmailDisplay) {
+        const connState = window.GmailSync && typeof window.GmailSync.getConnectionState === 'function'
+          ? window.GmailSync.getConnectionState()
+          : { connected: false };
+        if (connState.connected && (connState.email || connState.login_hint)) {
+          const lockedEmail = connState.email || connState.login_hint;
+          gmailConnectedAccountBox.style.display = 'flex';
+          gmailConnectedEmailDisplay.textContent = lockedEmail;
+          if (btnStartGoogleLogin) {
+            btnStartGoogleLogin.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> <span>Sinkronkan Akun Ini</span>';
+          }
+        } else {
+          gmailConnectedAccountBox.style.display = 'none';
+          if (btnStartGoogleLogin) {
+            btnStartGoogleLogin.innerHTML = '<i class="fa-brands fa-google"></i> <span>Buka Pop-up Login Google</span>';
+          }
+        }
+      }
+
+      if (initialAlertMsg) {
+        showGmailModalAlert(initialAlertMsg, alertType);
+      } else {
+        hideGmailModalAlert();
+      }
+
+      gmailConnectModal.style.display = 'flex';
+      if (btnStartGoogleLogin) {
+        btnStartGoogleLogin.focus();
+      }
+    }
+
+    function closeGmailConnectModal() {
+      if (gmailConnectModal) {
+        gmailConnectModal.style.display = 'none';
+      }
+      hideGmailModalAlert();
+      if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
+        lastActiveTrigger.focus();
+      }
+    }
+
+    if (btnCloseGmailModal) btnCloseGmailModal.addEventListener('click', closeGmailConnectModal);
+    if (btnCancelGmailModal) btnCancelGmailModal.addEventListener('click', closeGmailConnectModal);
+    if (gmailConnectModal) {
+      gmailConnectModal.addEventListener('click', (e) => {
+        if (e.target === gmailConnectModal) closeGmailConnectModal();
+      });
+    }
+
+    if (btnCopyOrigin) {
+      btnCopyOrigin.addEventListener('click', () => {
+        const origin = window.location.origin;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(origin).then(() => {
+            if (copyOriginText) copyOriginText.textContent = 'Tersalin!';
+            setTimeout(() => { if (copyOriginText) copyOriginText.textContent = 'Salin'; }, 2000);
+          }).catch(() => {
+            if (copyOriginText) copyOriginText.textContent = 'Tersalin!';
+          });
+        } else {
+          if (copyOriginText) copyOriginText.textContent = 'Tersalin!';
+        }
+      });
+    }
+
+    if (btnPasteClientId) {
+      btnPasteClientId.addEventListener('click', () => {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(text => {
+            if (text && text.trim() && gmailClientIdInput) {
+              gmailClientIdInput.value = text.trim();
+              gmailClientIdInput.focus();
+              hideGmailModalAlert();
+            }
+          }).catch(() => {});
+        }
+      });
+    }
+
+    if (chkGmailAutoInput) {
+      chkGmailAutoInput.addEventListener('change', () => {
+        if (window.GmailSync && typeof window.GmailSync.setAutoInputEnabled === 'function') {
+          window.GmailSync.setAutoInputEnabled(chkGmailAutoInput.checked);
+        }
+      });
+    }
+
+    if (chkGmailAutoLoop) {
+      chkGmailAutoLoop.addEventListener('change', () => {
+        if (window.GmailSync && typeof window.GmailSync.setAutoSyncLoopEnabled === 'function') {
+          window.GmailSync.setAutoSyncLoopEnabled(chkGmailAutoLoop.checked);
+        }
+      });
+    }
+
+    if (btnGmailSwitchAccount) {
+      btnGmailSwitchAccount.addEventListener('click', () => {
+        if (confirm('Apakah Anda ingin berganti ke akun Google yang lain?')) {
+          showGmailModalAlert('Membuka dialog pemilihan akun Google...', 'info');
+          if (window.GmailSync && typeof window.GmailSync.switchAccount === 'function') {
+            window.GmailSync.switchAccount();
+          }
+        }
+      });
+    }
+
+    if (btnStartGoogleLogin) {
+      btnStartGoogleLogin.addEventListener('click', () => {
+        let inputId = gmailClientIdInput ? gmailClientIdInput.value.trim() : '';
+        if (!inputId && window.GmailConfig && typeof window.GmailConfig.getClientId === 'function') {
+          inputId = window.GmailConfig.getClientId();
+        }
+        if (!inputId || inputId === 'GANTI_DENGAN_CLIENT_ID' || inputId.length < 10) {
+          showGmailModalAlert('Silakan tempel atau masukkan OAuth Client ID Google Anda terlebih dahulu.', 'warning');
+          if (gmailClientIdInput) gmailClientIdInput.focus();
+          return;
+        }
+
+        // Simpan Client ID ke localStorage
+        if (window.GmailConfig && typeof window.GmailConfig.setClientId === 'function') {
+          window.GmailConfig.setClientId(inputId);
+        }
+
+        showGmailModalAlert('Menyambungkan ke akun Google...', 'success');
+
+        // Buka Pop-up Otorisasi Google langsung dalam thread event klik ini (tanpa ganti akun)
+        if (window.GmailSync) {
+          window.GmailSync.loginWithGoogle({ forceSelectAccount: false });
+        }
+      });
+    }
+
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeImageModal);
     if (imageModal) {
       imageModal.addEventListener('click', (e) => {
@@ -623,10 +1140,12 @@
         closeImageModal();
         closeMultiMonthModal();
         closeDeleteConfirmModal();
+        closeGmailConnectModal();
       } else if (e.key === 'Tab') {
         trapModalFocus(imageModal, e);
         trapModalFocus(multiMonthModal, e);
         trapModalFocus(deleteConfirmModal, e);
+        trapModalFocus(gmailConnectModal, e);
       }
     });
 
@@ -821,7 +1340,7 @@
         const emptyLabel = isSelectedMonth ? (currentMonthData ? currentMonthData.label : 'bulan terpilih') : 'filter yang diterapkan';
         txTableBody.innerHTML = `
           <tr>
-            <td colspan="7" class="empty-state-cell">
+            <td colspan="6" class="empty-state-cell">
               <div class="table-empty-container">
                 <div class="empty-icon-ring">
                   <i class="fa-solid fa-receipt"></i>
@@ -853,15 +1372,6 @@
 
       filtered.forEach(t => {
         const isIncome = t.arus === 'pemasukan';
-        let proofHtml = '<span class="no-proof-pill">-</span>';
-        if (t.bukti_gambar) {
-          proofHtml = `
-            <button type="button" class="btn-proof-preview" title="Klik untuk memperbesar bukti">
-              <img class="proof-mini-thumb" src="${t.bukti_gambar}" alt="Bukti" />
-              <span>Lihat</span>
-            </button>
-          `;
-        }
 
         const streamBadgeHtml = isIncome
           ? `<span class="badge-stream-income"><i class="fa-solid fa-arrow-down-long"></i> Masuk</span>`
@@ -870,6 +1380,24 @@
         const amountClass = isIncome ? 'tx-amount-inflow' : 'tx-amount-outflow';
         const amountPrefix = isIncome ? '+ ' : '- ';
 
+        let jenisIcon = 'fa-receipt';
+        const jLower = (t.jenis || '').toLowerCase();
+        if (jLower.includes('qr') || jLower.includes('qris')) jenisIcon = 'fa-qrcode';
+        else if (jLower.includes('atm') || jLower.includes('tarik tunai')) jenisIcon = 'fa-money-bill-wave';
+        else if (jLower.includes('bi fast') || jLower.includes('bi-fast')) jenisIcon = 'fa-bolt';
+        else if (jLower.includes('masuk')) jenisIcon = 'fa-arrow-down-left';
+        else if (jLower.includes('transfer')) jenisIcon = 'fa-money-bill-transfer';
+        else if (jLower.includes('belanja')) jenisIcon = 'fa-bag-shopping';
+        else if (jLower.includes('makan') || jLower.includes('cafe') || jLower.includes('kopi')) jenisIcon = 'fa-utensils';
+        else if (jLower.includes('tagihan') || jLower.includes('pln') || jLower.includes('pulsa')) jenisIcon = 'fa-file-invoice-dollar';
+        else if (jLower.includes('gaji') || jLower.includes('salary')) jenisIcon = 'fa-briefcase';
+
+        const jenisBadgeHtml = `
+          <span class="tx-jenis-badge" title="Kategori: ${escapeHtml(t.jenis || 'Transaksi')}">
+            <i class="fa-solid ${jenisIcon}"></i> ${escapeHtml(t.jenis || 'Transaksi')}
+          </span>
+        `;
+
         const row = document.createElement('tr');
         row.innerHTML = `
           <td style="white-space:nowrap; color: var(--text-muted); font-size: 0.74rem;">
@@ -877,16 +1405,14 @@
           </td>
           <td>
             <span class="merchant-name-cell">${escapeHtml(t.tujuan)}</span>
-            <span class="ref-subtext">Ref: ${escapeHtml(t.no_referensi || '-')}</span>
+            ${t.sumber === 'gmail' ? '<span class="source-tag-gmail" title="Terdeteksi otomatis dari Gmail BCA"><i class="fa-solid fa-envelope"></i> Gmail</span>' : ''}
+            ${t.bukti_gambar ? '<button type="button" class="btn-proof-preview proof-mini-badge" title="Lihat foto bukti struk"><i class="fa-solid fa-image"></i> Struk</button>' : ''}
           </td>
           <td style="text-align: center;">
             ${streamBadgeHtml}
           </td>
-          <td style="color: var(--text-muted); font-size: 0.74rem;">
-            ${t.jenis || 'Transaksi'}
-          </td>
-          <td style="text-align: center;">
-            ${proofHtml}
+          <td style="font-size: 0.74rem;">
+            ${jenisBadgeHtml}
           </td>
           <td class="tx-amount-bold ${amountClass}">
             ${amountPrefix}${formatRupiah(t.total)}
@@ -1204,6 +1730,167 @@
     }
 
     renderDashboard();
+
+    // =========================================================
+    // INISIALISASI INTEGRASI GMAIL SYNC (ADITIF & TAHAN GAGAL)
+    // =========================================================
+    if (typeof window.GmailSync !== 'undefined') {
+      if (typeof window.GmailSync.setModalHandler === 'function') {
+        window.GmailSync.setModalHandler((msg) => openGmailConnectModal(msg, 'warning'));
+      }
+
+      if (typeof window.GmailSync.onConnectSuccess === 'function') {
+        window.GmailSync.onConnectSuccess(() => {
+          closeGmailConnectModal();
+        });
+      }
+
+      if (typeof window.GmailSync.onConnectError === 'function') {
+        window.GmailSync.onConnectError((err) => {
+          const msg = typeof err === 'string' ? err : 'Pop-up Google diblokir browser. Izinkan pop-up pada bilah URL atas.';
+          showGmailModalAlert(msg, 'error');
+        });
+      }
+
+      if (btnGmailConnect) {
+        btnGmailConnect.addEventListener('click', () => {
+          openGmailConnectModal();
+        });
+      }
+
+      if (btnGmailConfig) {
+        btnGmailConfig.addEventListener('click', () => {
+          openGmailConnectModal();
+        });
+      }
+
+      if (btnGmailSync) {
+        btnGmailSync.addEventListener('click', () => {
+          window.GmailSync.syncNow();
+        });
+      }
+
+      if (btnGmailReview) {
+        btnGmailReview.addEventListener('click', () => {
+          displayGmailQueueItem();
+        });
+      }
+
+      if (btnGmailDisconnect) {
+        btnGmailDisconnect.addEventListener('click', () => {
+          if (confirm('Apakah Anda yakin ingin memutuskan integrasi dengan Gmail?')) {
+            window.GmailSync.disconnect();
+          }
+        });
+      }
+
+      if (typeof window.GmailSync.setModalHandler === 'function') {
+        window.GmailSync.setModalHandler((msg) => {
+          openGmailConnectModal(msg, 'warning');
+        });
+      }
+
+      if (typeof window.GmailSync.onConnectError === 'function') {
+        window.GmailSync.onConnectError((err) => {
+          showGmailModalAlert(err, 'error');
+        });
+      }
+
+      if (typeof window.GmailSync.onConnectSuccess === 'function') {
+        window.GmailSync.onConnectSuccess(() => {
+          closeGmailConnectModal();
+        });
+      }
+
+      window.GmailSync.onStatusChange(({ state, message, details }) => {
+        const connState = window.GmailSync && typeof window.GmailSync.getConnectionState === 'function'
+          ? window.GmailSync.getConnectionState()
+          : { connected: false };
+        const activeEmail = (details && details.email) || connState.email || connState.login_hint || '';
+        const emailTag = activeEmail ? ` (${activeEmail})` : '';
+
+        if (gmailAccountEmail) {
+          if (isConnectedState && activeEmail) {
+            gmailAccountEmail.textContent = activeEmail;
+            gmailAccountEmail.style.display = 'inline-block';
+            gmailAccountEmail.title = `Akun Gmail Terhubung: ${activeEmail}`;
+          } else {
+            gmailAccountEmail.style.display = 'none';
+          }
+        }
+
+        if (gmailStatusTitle) {
+          if (state === 'connected' || state === 'idle' || state === 'has_items') {
+            gmailStatusTitle.textContent = activeEmail || 'Terhubung';
+          } else if (state === 'syncing' || state === 'silent_syncing') {
+            gmailStatusTitle.textContent = activeEmail || 'Menyinkronkan...';
+          } else if (state === 'unconfigured') {
+            gmailStatusTitle.textContent = 'Menunggu Setup';
+          } else if (connState.connected) {
+            gmailStatusTitle.textContent = activeEmail || 'Terhubung';
+          } else {
+            gmailStatusTitle.textContent = 'Belum Terhubung';
+          }
+        }
+
+        if (gmailStatusSub && message) {
+          gmailStatusSub.textContent = message;
+        }
+
+        const isConnectedState = Boolean(connState.connected || state === 'connected' || state === 'idle' || state === 'has_items' || state === 'syncing' || state === 'silent_syncing');
+
+        if (gmailSyncStrip) {
+          gmailSyncStrip.classList.toggle('connected', isConnectedState);
+        }
+
+        if (btnGmailConnect) {
+          btnGmailConnect.style.display = isConnectedState ? 'none' : 'inline-flex';
+        }
+        if (btnGmailSync) {
+          btnGmailSync.style.display = isConnectedState ? 'inline-flex' : 'none';
+        }
+        if (btnGmailDisconnect) {
+          btnGmailDisconnect.style.display = isConnectedState ? 'inline-flex' : 'none';
+        }
+      });
+
+      window.GmailSync.onQueueChange(({ count }) => {
+        if (btnGmailReview) {
+          btnGmailReview.style.display = count > 0 ? 'inline-flex' : 'none';
+          if (btnGmailReviewText) {
+            btnGmailReviewText.textContent = `Tinjau (${count})`;
+          }
+        }
+        if (gmailSyncStrip) {
+          gmailSyncStrip.classList.toggle('has-queue', count > 0);
+        }
+        // Jika terdapat transaksi dalam antrean dan review card belum terisi OCR aktif, buka otomatis
+        if (count > 0 && (!currentParsedData || currentParsedData.sumber === 'gmail')) {
+          displayGmailQueueItem();
+        }
+      });
+
+      if (typeof window.GmailSync.onLoopStatusChange === 'function') {
+        window.GmailSync.onLoopStatusChange(({ active }) => {
+          if (gmailLoopBadge) {
+            gmailLoopBadge.style.display = active ? 'inline-flex' : 'none';
+          }
+        });
+      }
+
+      if (typeof window.GmailSync.onAutoSave === 'function') {
+        window.GmailSync.onAutoSave((count) => {
+          renderDashboard();
+          showRolloverToast(
+            '⚡ Transaksi BCA Masuk Otomatis!',
+            `${count} transaksi baru berhasil diekstrak dari Gmail BCA dan langsung dicatat ke kas.`
+          );
+        });
+      }
+
+      // Picu sinkronisasi senyap otomatis jika pengguna pernah terhubung
+      window.GmailSync.trySilentSync();
+    }
   });
 })();
 

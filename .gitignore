@@ -38,8 +38,7 @@ ethol-notifier/**/screenshots/presensi_*.jpg
 !ethol-notifier/screenshots/presensi_sample.jpg
 ethol-notifier/ethol-notifier/
 ethol-notifier/Error_Absen/
-Error_Absen/presensi_*.jpg
-Error_Absen/presensi_terbaru_*.jpg
+Error_Absen/
 
 # OS & Editor Metadata
 .DS_Store

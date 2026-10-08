@@ -1,9 +1,9 @@
 {
-  "lastCheck": "2026-10-06T04:12:57.890Z",
-  "totalPending": 1,
+  "lastCheck": "2026-10-08T12:48:48.578Z",
+  "totalPending": 2,
   "tasks": [
     {
-      "id": "task_1791259977889_5_0",
+      "id": "task_1791463728578_6_1",
       "title": "dasar pemrograman java",
       "matakuliah": "Workshop Pemrograman Lanjut",
       "dosen": "Mike Yuliana",
@@ -13,6 +13,18 @@
       "status": "Belum Mengumpulkan",
       "timeAgo": "Mendekati Tenggat",
       "url": "https://ethol.pens.ac.id/mahasiswa/matakuliah/221136/tugas"
+    },
+    {
+      "id": "task_1791463728578_0_0",
+      "title": "Tugas 5 - Cleaning Data 3",
+      "matakuliah": "Workshop Akuisisi Data",
+      "dosen": "A. Fauzi Makarim",
+      "deadline": "2026-10-12 23:59:00",
+      "deadline_indonesia": "Senin, 12 Oktober 2026 - 23:59",
+      "hTag": "H-5",
+      "status": "Belum Mengumpulkan",
+      "timeAgo": "Mendekati Tenggat",
+      "url": "https://ethol.pens.ac.id/mahasiswa/matakuliah/221130/tugas"
     }
   ]
 }

@@ -8,7 +8,7 @@
 
 Dokumen tunggal ini menggabungkan seluruh panduan arsitektur, konvensi organisasi folder fitur, protokol audit kebersihan proyek, serta spesifikasi teknis terkini dari ekosistem **Arz-WEB**, yang mencakup tiga pilar aplikasi web aktif yang telah dibangun dan terpasang di server produksi:
 1. **Grimoire Dashboard Utama** (`index.html`) — Portal sentral web personal bergaya cyber-grimoire transparan borderless dengan peluncur katalog proyek terintegrasi, pemantau telemetri sistem, konsol notifikasi live, dan jam perkamen.
-2. **Arcanum Finance (Money Tracker)** (`keuangan.html`) — Modul pencatatan arus kas (*cashflow dual-stream* inflow/outflow) murni tanpa kategori dengan automasi AI OCR Vision (Tesseract.js), smart regex parser (transfer, QRIS, tarik tunai ATM), review card interaktif, dan grafik multi-bulan.
+2. **Arcanum Finance (Money Tracker)** (`keuangan.html`) — Modul pencatatan arus kas (*cashflow dual-stream* inflow/outflow) murni tanpa kategori dengan automasi AI OCR Vision (Tesseract.js), smart regex parser (transfer, QRIS, tarik tunai ATM), integrasi pintar Gmail BCA Auto-Sync via Google Identity Services (GIS) OAuth 2.0 Client-Side, Auto-Check Loop Engine (seperti auto absen) dengan interval berkala 3 menit, auto-input kas instan, dan visualisasi komparasi multi-bulan.
 3. **Ethol Academic Notifier** (`ethol-notifier/`) — Modul automasi akademik cerdas berbasis headless Puppeteer & background daemon di CasaOS: Executive Presensi Deck terpadu dengan cincin countdown radial SVG, linimasa kehadiran interaktif real-time, lightbox bukti layar, tray konsol diagnostik server collapsible, pemantau tenggat tugas kuliah (≤ 5 hari), serta metamorfosis tema Velvet Crimson Arcane dinamis saat mode loop.
 *(Catatan: Purwarupa uji coba dan tester otonom QA TestSprite diisolasi secara eksklusif di `lab/` dan `testsprite_tests/` untuk lingkungan localhost, dilindungi dari deployment publik).*
 
@@ -380,6 +380,24 @@ Dashboard menyajikan empat kartu ringkasan keuangan bulan berjalan:
 - **Grid KPI Adaptif**: Grid kartu KPI menyesuaikan menjadi `2x2` kompak dan fleksibel (`repeat(2, minmax(0, 1fr))`).
 - **Tabel Responsif**: Tabel riwayat transaksi dibungkus dalam `.table-scroll-container` yang dapat digeser horizontal tanpa memicu kebocoran layout.
 
+### 9. Integrasi Smart Gmail BCA Auto-Sync & Auto-Check Loop Engine (`src/keuangan/`)
+- **100% Client-Side OAuth 2.0 (Google Identity Services - GIS)**:
+  - Otentikasi resmi via Google Identity Services Token Client (`https://accounts.google.com/gsi/client`) dengan cakupan minimal `https://www.googleapis.com/auth/gmail.readonly`.
+  - Token akses disimpan secara aman di memori sesi & cache lokal terenkripsi, tanpa backend server perantara (Zero-Backend Token Leakage).
+- **Permanent Account Lock & Anti-Switching**:
+  - Mengunci akun Gmail yang telah terhubung (`raidenarya070906@gmail.com`) dengan flag `locked: true` dan `login_hint` presisi, mencegah Google memicu dialog ganti akun secara liar kecuali pengguna mengeklik tombol "Ganti Akun" secara eksplisit.
+- **Auto-Sync Loop Engine (Seperti Mekanisme Auto Absen)**:
+  - Beroperasi otomatis di latar belakang dengan interval berkala 3 menit (180 detik) tanpa memerlukan klik manual pengguna.
+  - **Smart Visibility Wake-Up**: Saat pengguna kembali membuka tab browser setelah > 2 menit di aplikasi lain, sistem otomatis memicu instant check ke Gmail API.
+  - **Silent Background Execution**: Mode latar belakang (`isAutoLoop: true`) berjalan senyap dan tidak memunculkan pop-up browser bila sesi token habis.
+- **Ekstraksi Cerdas & Auto-Input ke Kas**:
+  - Mesin parser `email-parser.js` memvalidasi pengirim resmi (`bca@bca.co.id`, `KlikBCA`, `myBCA`), mengekstrak mutasi QRIS, m-Transfer, dan tarikan ATM, serta menolak email non-transaksi finansial (aktivasi device/newsletter).
+  - Jika opsi `Otomatis Input ke Catatan Kas` aktif, transaksi otomatis tercatat ke `KeuanganStorage` (Pemasukan/Pengeluaran & Saldo) disertai notifikasi toast audio-visual chime.
+- **Tampilan Minimalis (Direct Gmail Display)**:
+  - Bilah sinkronisasi Gmail strip secara elegan langsung menyajikan alamat email pengguna (`raidenarya070906@gmail.com`) dengan font monospace tanpa teks pengantar berlebih.
+- **Verifikasi Otonom TestSprite**:
+  - Seluruh 16 kasus uji pada `testsprite_tests/test_email_parser.js` lulus 100% tanpa regresi.
+
 ---
 
 ## BAGIAN IV: SPESIFIKASI ETHOL ACADEMIC NOTIFIER (`ethol-notifier/`)
@@ -511,3 +529,4 @@ Modul automasi akademik mandiri (**Ethol Academic Notifier**) beroperasi sebagai
 | **11 Sep 2026** | **Feature Folder Restructure** | Migrasi struktur proyek ke standar `feature-folder-organization` berbasis fitur domain. |
 | **30 Sep 2026** | **Protokol Eksekusi 'pw' Android-Fit, Skill Mobile Design System, & Overhaul Arcanum Finance** | Pembaruan protokol baku eksekusi deployment "pw" di `AGENTS.md` (Tahap 2: Android-Fit Protocol): (1) Dynamic Viewport (`100dvh`), (2) Safe Area Insets (`env(safe-area-inset-top)` & `bottom`), (3) Target Sentuh Google Material Min 48dp/48px (*fat-finger safe*), (4) Ergonomi Thumb-Zone, (5) Anti-Pull-to-Refresh & Zero Tap Delay (`overscroll-behavior-y: contain; touch-action: manipulation;`), (6) Android Status Bar Sync (`theme-color` & `viewport-fit=cover`), dan (7) Zero Horizontal Overflow. Instalasi skill `.agents/skills/mobile-design/SKILL.md`. Redesain total Arcanum Finance (`keuangan.html` & `keuangan.css`) dengan Glassmorphism FinTech Cockpit, Bento Grid KPI, AI Receipt Scanner Chamber, dan tabel riwayat transaksi terisolasi. Penyelarasan meta tag Android pada seluruh portal web aktif (`index.html`, `keuangan.html`, `ethol-notifier/index.html`). |
 | **30 Sep 2026** | **Resolusi Bug Overlap Popover Katalog Proyek & Sistem Flyout Eksklusif** | Perbaikan menyeluruh terhadap konflik tumpang tindih (*overlap*) kartu popover dan ikon ubin di Katalog Proyek Grimoire Dashboard (`src/proyek/`): (1) Mengeliminasi pemicu liar CSS `:hover` pada `.project-popover` dan menggantinya dengan aktivasi klik mutlak `.show-popover`, (2) Penguncian z-index absolut (`z-index: 99999 !important;`) pada ubin aktif sehingga ubin baris bawah tidak akan pernah menembus (*punch-through*) kartu detail, (3) Mekanisme eksklusif *single active popover* (membuka ubin lain otomatis menutup ubin sebelumnya), (4) Penambahan tombol tutup `✕`, klik di luar, dan shortcut tombol Escape, (5) Eliminasi tooltip hitam native browser via penggantian atribut `title` menjadi `aria-label`, (6) Penambahan tombol primer `[ ↗ Buka ]` bergradien emerald tebal, serta (7) Double-click shortcut untuk navigasi instan. |
+| **08 Okt 2026** | **Integrasi Smart Gmail BCA Auto-Sync, Auto-Check Loop Engine (Auto Absen), & Direct Gmail Display di Arcanum Finance** | Integrasi sinkronisasi otomatis transaksi BCA resmi via Google Identity Services (GIS) OAuth 2.0: (1) Arsitektur 100% Client-Side murni tanpa backend perantara (Zero-Backend Token Leakage), (2) Auto-Sync Loop Engine di background setiap 3 menit (180 detik) dan tab visibility wake-up seperti mekanisme auto absen, (3) Otomatis input transaksi BCA resmi (m-Transfer, QRIS, KlikBCA) langsung ke Pemasukan/Pengeluaran & Saldo dengan notifikasi toast chime audio-visual, (4) Permanent Account Lock (`raidenarya070906@gmail.com`) dengan opsi Ganti Akun manual, (5) Tampilan bilah minimalis langsung menyajikan alamat Gmail pengguna saja (`raidenarya070906@gmail.com`) dengan font monospace, (6) Verifikasi otonom TestSprite 16/16 lulus 100%, serta (7) Sinkronisasi ubin katalog proyek Grimoire Dashboard. |

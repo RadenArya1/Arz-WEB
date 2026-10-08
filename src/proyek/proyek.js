@@ -9,14 +9,14 @@
   const DEFAULT_PROJECTS = [
     {
       id: 'proj_money_tracker',
-      title: 'Money Tracker (Pencatatan Keuangan)',
+      title: 'Arcanum Finance (Money Tracker)',
       icon: 'fa-coins',
       status: 'active',
       statusLabel: 'Aktif',
-      desc: 'Aplikasi web mandiri untuk pencatatan pengeluaran harian, deteksi kategori otomatis dari teks struk BCA QR & m-Transfer, serta analitik grafik Chart.js.',
+      desc: 'Dashboard FinTech eksekutif pencatatan arus kas, parser struk AI OCR, integrasi sinkronisasi otomatis transaksi Gmail BCA (OAuth 2.0 Client-Side), dan komparasi multi-bulan.',
       target: 'keuangan.html (Web Mandiri)',
       url: 'keuangan.html',
-      tags: ['Money Tracker', 'Vanilla JS', 'Chart.js', 'Smart Parser', 'Auto Category']
+      tags: ['Arcanum Finance', 'Gmail BCA Sync', 'OAuth 2.0', 'Vanilla JS', 'Chart.js', 'AI OCR', 'Cashflow']
     },
     {
       id: 'proj_ethol_sync',

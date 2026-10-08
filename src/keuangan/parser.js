@@ -68,20 +68,28 @@
 
     // 0. Deteksi Arus Kas (Pemasukan vs Pengeluaran)
     let arus = 'pengeluaran'; // default
-    if (/transfer masuk|pemasukan|dana masuk|uang masuk|cashflow\s*-\s*pemasukan/i.test(text)) {
+    if (/transfer masuk|pemasukan|dana masuk|uang masuk|cashflow\s*-\s*pemasukan|gaji|salary|payroll|upah|terima\s*uang/i.test(text)) {
       arus = 'pemasukan';
     }
 
     // 1. Deteksi Jenis Transaksi
     let jenis = arus === 'pemasukan' ? 'Transfer Masuk' : 'Pembayaran Lainnya';
-    if (/tarikan\s*atm|tarik\s*tunai|atm/i.test(text)) {
+    if (/tarikan\s*atm|tarik\s*tunai|atm\b/i.test(text)) {
       jenis = 'Tarik Tunai (ATM)';
-    } else if (/pembayaran\s*qr/i.test(text) || /qris/i.test(text)) {
+    } else if (/pembayaran\s*qr|qris|qr\s*payment/i.test(text)) {
       jenis = 'Pembayaran QR';
     } else if (/bi\s*fast/i.test(text)) {
       jenis = 'Transfer (BI FAST)';
-    } else if (/m-transfer/i.test(text) || /transfer/i.test(text)) {
+    } else if (/m-transfer|transfer/i.test(text)) {
       jenis = arus === 'pemasukan' ? 'Transfer Masuk' : 'Transfer Bank';
+    } else if (/gaji|salary|payroll|upah|honor/i.test(text)) {
+      jenis = 'Gaji / Pendapatan';
+    } else if (/indomaret|alfamart|superindo|hypermart|transmart|minimarket|belanja|toko\b|shopee\b|tokopedia\b/i.test(text)) {
+      jenis = 'Belanja & Konsumsi';
+    } else if (/cafe|coffee|kopi|resto|restaurant|makan|kuliner|gofood|grabfood|shopeefood/i.test(text)) {
+      jenis = 'Makanan & Minuman';
+    } else if (/pln|listrik|pdam|air\b|bpjs|indihome|wifi|pulsa|paket data|tagihan|pbb\b/i.test(text)) {
+      jenis = 'Pembayaran Tagihan';
     }
 
     // 2. Ekstraksi Tanggal & Jam
@@ -309,7 +317,10 @@
 
   const api = {
     cleanNominal,
-    parseReceiptText
+    parseReceiptText,
+    normalizeDate,
+    isInvalidMerchant,
+    INDO_MONTHS
   };
 
   if (typeof module !== 'undefined' && module.exports) {

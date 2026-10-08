@@ -26,8 +26,11 @@
   <!-- Tesseract.js CDN for Automatic Client-Side Receipt OCR (Image-to-Text) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
+  <!-- Google Identity Services (GIS) Client SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- Feature Stylesheet: Master Studio Unified Architecture -->
-  <link rel="stylesheet" href="src/keuangan/keuangan.css?v=20260930_master_overhaul_v3" />
+  <link rel="stylesheet" href="src/keuangan/keuangan.css?v=20261008_v19" />
 </head>
 <body class="keuangan-body">
   <!-- Canvas Partikel Sihir Latar Belakang -->
@@ -41,24 +44,6 @@
       </div>
       <div class="brand-text">
         <h1>Arcanum Finance</h1>
-        <div class="brand-subtitle">
-          <span class="status-live-dot"></span>
-          <span>Cockpit FinTech • Arz-WEB</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Telemetry Status Micro-Indicators -->
-    <div class="topbar-telemetry-cluster" aria-label="Status Sistem">
-      <div class="telemetry-chip chip-ocr" title="Status AI OCR Vision (Tesseract.js)">
-        <span class="micro-dot dot-ocr"></span>
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-        <span>AI OCR</span>
-      </div>
-      <div class="telemetry-chip chip-vault" title="Status Enkripsi Vault Lokal">
-        <span class="micro-dot dot-vault"></span>
-        <i class="fa-solid fa-shield-halved"></i>
-        <span>Vault Active</span>
       </div>
     </div>
 
@@ -156,7 +141,6 @@
         <div class="section-head chart-clean-head">
           <div class="section-title-wrap">
             <h2><i class="fa-solid fa-chart-column" style="color: #34d399;"></i> Visualisasi Arus Kas Bulanan</h2>
-            <span class="section-subtitle">Komparasi berdampingan antara bulan pilihan dan bulan berjalan</span>
           </div>
 
           <div class="chart-header-actions">
@@ -184,8 +168,6 @@
           <!-- KOTAK KIRI: BULAN FOKUS (DENGAN PANAH < > & DROPDOWN RIWAYAT) -->
           <div class="month-box month-box-focus">
             <div class="month-box-header">
-              <span class="month-type-tag tag-focus"><i class="fa-solid fa-clock-rotate-left"></i> Pembanding</span>
-
               <div class="focus-nav-cluster">
                 <button type="button" class="btn-box-arrow" id="btnFocusPrev" title="Bulan Sebelumnya">
                   <i class="fa-solid fa-chevron-left"></i>
@@ -238,7 +220,36 @@
       <div class="parser-workspace-card">
         <div class="section-head">
           <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--border-gold-glow);"></i> Smart Receipt &amp; Transfer Parser</h2>
-          <span class="trend-badge positive"><i class="fa-solid fa-bolt"></i> Auto-Detect Inflow/Outflow</span>
+        </div>
+
+        <!-- Gmail Auto-Sync Strip (BCA Transaction Watcher) -->
+        <div class="gmail-sync-strip" id="gmailSyncStrip" role="region" aria-label="Sinkronisasi Gmail BCA">
+          <div class="gmail-status-group">
+            <span class="gmail-status-icon" id="gmailStatusIcon">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <span class="gmail-account-email" id="gmailAccountEmail">raidenarya070906@gmail.com</span>
+          </div>
+          <div class="gmail-actions-group">
+            <button type="button" class="btn-gmail-action btn-gmail-connect" id="btnGmailConnect" title="Hubungkan akun Gmail untuk membaca email notifikasi BCA">
+              <i class="fa-brands fa-google"></i>
+              <span>Hubungkan Gmail</span>
+            </button>
+            <button type="button" class="btn-gmail-action btn-gmail-sync" id="btnGmailSync" style="display: none;" title="Periksa email notifikasi transaksi BCA sekarang">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Sinkron Sekarang</span>
+            </button>
+            <button type="button" class="btn-gmail-action btn-gmail-review" id="btnGmailReview" style="display: none;" title="Buka antrean tinjauan transaksi">
+              <i class="fa-solid fa-inbox"></i>
+              <span id="btnGmailReviewText">Tinjau (0)</span>
+            </button>
+            <button type="button" class="btn-gmail-config" id="btnGmailConfig" title="Konfigurasi Client ID Google" aria-label="Konfigurasi Client ID Google">
+              <i class="fa-solid fa-gear"></i>
+            </button>
+            <button type="button" class="btn-gmail-disconnect" id="btnGmailDisconnect" style="display: none;" title="Putuskan koneksi Gmail" aria-label="Putuskan koneksi">
+              <i class="fa-solid fa-link-slash"></i>
+            </button>
+          </div>
         </div>
 
         <!-- AI Receipt Image Drop & Paste Zone (Scanner Chamber) -->
@@ -260,9 +271,6 @@
                 <span class="highlight-action"><i class="fa-solid fa-paste"></i> Tempel Bukti Transfer / Struk</span>
                 <kbd class="kbd-badge">Ctrl + V</kbd>
               </p>
-              <span class="dropzone-sub-text">
-                Mendukung struk QRIS, m-Transfer BCA, notifikasi transfer masuk/keluar. AI OCR mengekstrak nominal instan.
-              </span>
               <div class="dropzone-actions-row">
                 <button type="button" class="btn-paste-clipboard" id="btnPasteClipboard" title="Tempel gambar dari clipboard komputer/HP">
                   <i class="fa-solid fa-paste"></i> Tempel dari Clipboard (Ctrl + V)
@@ -296,8 +304,12 @@
         <div class="parsed-review-card" id="parsedReviewCard" style="display: none;">
           <div class="review-card-header-bar">
             <div class="review-header-badge">
-              <i class="fa-solid fa-receipt"></i>
-              <span>Hasil Ekstraksi Struk Digital</span>
+              <i class="fa-solid fa-receipt" id="reviewCardIcon"></i>
+              <span id="reviewCardTitle">Hasil Ekstraksi Struk Digital</span>
+              <span class="review-source-badge gmail-badge" id="reviewSourceBadge" style="display: none;">
+                <i class="fa-solid fa-envelope"></i> Dari Gmail
+              </span>
+              <span class="review-queue-counter" id="reviewQueueCounter" style="display: none;">1 dari 1</span>
             </div>
             <span class="review-hint-text"><i class="fa-solid fa-pen-to-square"></i> Periksa &amp; edit jika perlu sebelum menyimpan</span>
           </div>
@@ -326,26 +338,72 @@
                     <i class="fa-solid fa-arrow-up-long"></i> Pengeluaran (-)
                   </button>
                 </div>
-                <span class="review-amount-text" id="reviewTotalVal">Rp 0</span>
+                
+                <!-- Kotak Nominal Interaktif (Dapat Diedit Langsung) -->
+                <div class="review-amount-container" title="Nominal terdeteksi otomatis. Ketuk angka untuk mengedit jika perlu.">
+                  <span class="review-amount-prefix text-expense" id="reviewAmountPrefix">-</span>
+                  <span class="review-amount-currency">Rp</span>
+                  <span class="review-amount-val editable-field text-expense" id="reviewTotalVal" contenteditable="true" spellcheck="false" inputmode="numeric" title="Ketuk untuk mengedit nominal">0</span>
+                  <i class="fa-solid fa-pen-to-square amount-edit-hint" title="Dapat diedit"></i>
+                </div>
               </div>
 
               <div class="review-card-meta">
+                <!-- Pihak / Merchant / Keterangan -->
                 <div class="meta-item">
-                  <span class="meta-item-label" id="reviewPartyLabel">Pihak / Keterangan <i class="fa-solid fa-pen" title="Dapat diedit langsung"></i></span>
+                  <span class="meta-item-label" id="reviewPartyLabel"><i class="fa-solid fa-user-tag"></i> Pihak / Keterangan <i class="fa-solid fa-pen" title="Dapat diedit langsung"></i></span>
                   <div class="meta-item-value editable-field" id="reviewMerchantVal" contenteditable="true" spellcheck="false" title="Ketuk untuk mengedit keterangan">-</div>
                 </div>
+
+                <!-- Jenis / Kategori Transaksi -->
                 <div class="meta-item">
-                  <span class="meta-item-label">Waktu Transaksi <i class="fa-solid fa-pen" title="Dapat diedit langsung"></i></span>
+                  <span class="meta-item-label" id="reviewJenisLabel"><i class="fa-solid fa-tags"></i> Jenis Transaksi</span>
+                  <div class="review-select-wrap">
+                    <select id="reviewJenisSelect" class="review-jenis-select" title="Pilih kategori/jenis transaksi">
+                      <option value="Pembayaran QR">📱 Pembayaran QR (QRIS)</option>
+                      <option value="Transfer Bank">🏦 Transfer Bank</option>
+                      <option value="Transfer (BI FAST)">⚡ Transfer (BI FAST)</option>
+                      <option value="Transfer Masuk">📥 Transfer Masuk</option>
+                      <option value="Tarik Tunai (ATM)">🏧 Tarik Tunai (ATM)</option>
+                      <option value="Belanja &amp; Konsumsi">🛒 Belanja &amp; Konsumsi</option>
+                      <option value="Makanan &amp; Minuman">☕ Makanan &amp; Minuman</option>
+                      <option value="Pembayaran Tagihan">🧾 Pembayaran Tagihan</option>
+                      <option value="Gaji / Pendapatan">💼 Gaji / Pendapatan</option>
+                      <option value="Lainnya">📦 Lainnya</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Waktu Transaksi -->
+                <div class="meta-item">
+                  <span class="meta-item-label"><i class="fa-regular fa-calendar-check"></i> Waktu Transaksi <i class="fa-solid fa-pen" title="Dapat diedit langsung"></i></span>
                   <div class="meta-item-value editable-field" id="reviewDateVal" contenteditable="true" spellcheck="false" title="Ketuk untuk mengedit tanggal/waktu">-</div>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Kotak Peringatan Review Card (misal: Mungkin duplikat, waktu perkiraan, jenis belum terkonfirmasi) -->
+          <div class="review-warnings-box" id="reviewWarningsBox" style="display: none;">
+            <!-- Diisi secara dinamis oleh JS -->
+          </div>
+
           <div class="review-card-actions">
             <button type="button" id="btnClearParsedTx" class="btn-discard-tx">
               <i class="fa-solid fa-xmark"></i>
               <span>Batal</span>
+            </button>
+            <button type="button" id="btnSkipParsedTx" class="btn-skip-tx" style="display: none;" title="Lewati sementara &amp; tinjau transaksi berikutnya">
+              <i class="fa-solid fa-forward"></i>
+              <span>Lewati dulu</span>
+            </button>
+            <button type="button" id="btnDismissParsedTx" class="btn-dismiss-tx" style="display: none;" title="Abaikan transaksi ini secara permanen">
+              <i class="fa-solid fa-ban"></i>
+              <span>Abaikan</span>
+            </button>
+            <button type="button" id="btnSaveAllParsedTx" class="btn-save-all-tx" style="display: none;" title="Simpan seluruh transaksi BCA dalam antrean ke catatan kas sekaligus">
+              <i class="fa-solid fa-layer-group"></i>
+              <span id="btnSaveAllParsedTxText">Simpan Semua</span>
             </button>
             <button type="button" id="btnSaveParsedTx" class="btn-save-confirmed">
               <i class="fa-solid fa-floppy-disk"></i>
@@ -385,7 +443,6 @@
               <option value="all">Semua Bulan</option>
             </select>
           </div>
-          <span class="table-stats-count" id="tableStatsCount">0 transaksi</span>
         </div>
       </div>
 
@@ -408,7 +465,6 @@
               <th>Pihak / Keterangan</th>
               <th style="width: 105px; text-align: center;">Arus</th>
               <th style="width: 110px;">Kategori</th>
-              <th style="width: 80px; text-align: center;">Bukti</th>
               <th style="text-align: right; width: 155px;">Nominal</th>
               <th style="text-align: center; width: 60px;">Aksi</th>
             </tr>
@@ -538,13 +594,148 @@
     </div>
   </div>
 
-  <!-- Shared Audio & Particles -->
-  <script src="src/shared/audio.js?v=20260913_7"></script>
-  <script src="src/shared/particles.js?v=20260913_7"></script>
+  <!-- ================= MODAL HUBUNGKAN GMAIL (GOOGLE OAUTH POP-UP) ================= -->
+  <div class="image-modal-backdrop" id="gmailConnectModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="gmailModalTitle">
+    <div class="image-modal-dialog gmail-modal-dialog">
+      <!-- Modal Header -->
+      <div class="image-modal-header gmail-modal-header">
+        <div class="modal-title-group">
+          <div class="gmail-modal-badge-icon">
+            <i class="fa-brands fa-google"></i>
+          </div>
+          <div>
+            <h3 id="gmailModalTitle">Hubungkan Akun Gmail BCA</h3>
+            <span class="modal-subtext">Google Identity Services • 100% Client-Side In-Memory Token</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseGmailModal" title="Tutup Modal" aria-label="Tutup modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-  <!-- Feature Scripts -->
-  <script src="src/keuangan/parser.js?v=20260916_merchant_fix"></script>
-  <script src="src/keuangan/storage.js?v=20260913_11"></script>
-  <script src="src/keuangan/keuangan.js?v=20260916_merchant_fix"></script>
+      <!-- Modal Body -->
+      <div class="gmail-modal-body">
+        <!-- Security & Privacy Guarantee Banner -->
+        <div class="gmail-security-banner">
+          <div class="security-banner-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="security-banner-text">
+            <strong>100% Client-Side &amp; Privasi Terlindungi:</strong>
+            <p>Otorisasi resmi Google OAuth 2.0 berjalan langsung di browser Anda. Hanya membaca email transaksi resmi dari <code>bca@bca.co.id</code> (izin <code>gmail.readonly</code>). Token akses disimpan murni di memori RAM dan tidak pernah dikirim ke server pihak ketiga.</p>
+          </div>
+        </div>
+
+        <!-- Setup Card & Client ID Configuration -->
+        <div class="gmail-setup-card">
+          <div class="setup-header">
+            <span class="setup-step-tag"><i class="fa-solid fa-key"></i> OAuth 2.0 Client ID</span>
+            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="setup-cloud-link" title="Buka Google Cloud Console di tab baru">
+              <span>Google Cloud Console</span>
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+
+          <p class="setup-desc">
+            Masukkan Client ID (tipe <em>Web Application</em>) dari Google Cloud Console Anda:
+          </p>
+
+          <!-- Input Client ID Field -->
+          <div class="gmail-input-group">
+            <label for="gmailClientIdInput" class="gmail-input-label">Google OAuth Client ID</label>
+            <div class="gmail-input-wrap">
+              <i class="fa-solid fa-id-badge gmail-input-icon"></i>
+              <input 
+                type="text" 
+                id="gmailClientIdInput" 
+                class="gmail-client-id-input" 
+                placeholder="misal: 1234567890-xxx.apps.googleusercontent.com" 
+                autocomplete="off" 
+                spellcheck="false"
+              />
+              <button type="button" class="btn-paste-client-id" id="btnPasteClientId" title="Tempel dari Clipboard">
+                <i class="fa-solid fa-paste"></i>
+                <span>Tempel</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Origin URL Helper -->
+          <div class="origin-helper-box">
+            <div class="origin-helper-info">
+              <span class="origin-label"><i class="fa-solid fa-globe"></i> Authorized JavaScript Origin:</span>
+              <code class="origin-code-val" id="currentOriginDisplay">http://127.0.0.1:8080</code>
+            </div>
+            <button type="button" class="btn-copy-origin" id="btnCopyOrigin" title="Salin Origin URL">
+              <i class="fa-regular fa-copy"></i>
+              <span id="copyOriginText">Salin</span>
+            </button>
+          </div>
+          <p class="origin-tip">
+            *Pastikan URL di atas sudah terdaftar di <strong>Authorized JavaScript origins</strong> pada setelan OAuth Client ID di Google Cloud Console.
+          </p>
+
+          <!-- Setelan Auto-Input Transaksi Langsung ke Kas -->
+          <div class="gmail-auto-input-box" style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding: 12px 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 600; font-size: 0.85rem; color: #f0fdf4;"><i class="fa-solid fa-bolt" style="color: #4ade80;"></i> Otomatis Input ke Catatan Kas</span>
+              <span style="font-size: 0.75rem; color: #94a3b8;">Transaksi BCA resmi langsung masuk ke Pemasukan/Pengeluaran &amp; Saldo</span>
+            </div>
+            <input type="checkbox" id="chkGmailAutoInput" checked style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;" title="Aktifkan agar transaksi BCA otomatis tersimpan ke catatan kas" />
+          </div>
+
+          <!-- Setelan Auto-Check Berkala Latar Belakang (Seperti Auto Absen) -->
+          <div class="gmail-auto-loop-box" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 600; font-size: 0.85rem; color: #f0f9ff;"><i class="fa-solid fa-arrows-rotate" style="color: #38bdf8;"></i> Mode Auto-Check Berkala (Seperti Auto Absen)</span>
+              <span style="font-size: 0.75rem; color: #94a3b8;">Otomatis memindai transaksi baru setiap 3 menit di latar belakang</span>
+            </div>
+            <input type="checkbox" id="chkGmailAutoLoop" checked style="width: 20px; height: 20px; cursor: pointer; accent-color: #0284c7;" title="Aktifkan mode pengawasan transaksi otomatis berkala" />
+          </div>
+
+          <!-- Informasi Akun Terhubung & Opsi Ganti Akun -->
+          <div class="gmail-connected-account-box" id="gmailConnectedAccountBox" style="display: none; align-items: center; justify-content: space-between; margin-top: 14px; padding: 12px 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 600; font-size: 0.85rem; color: #dbeafe;"><i class="fa-solid fa-lock" style="color: #60a5fa;"></i> Akun Terkunci Permanen</span>
+              <span style="font-size: 0.8rem; color: #93c5fd; font-family: monospace;" id="gmailConnectedEmailDisplay">-</span>
+            </div>
+            <button type="button" class="btn-switch-account" id="btnGmailSwitchAccount" title="Hanya gunakan tombol ini jika Anda ingin berganti akun Gmail">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i>
+              <span>Ganti Akun</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Alert / Feedback Box inside Modal -->
+        <div class="gmail-modal-alert" id="gmailModalAlert" style="display: none;">
+          <i class="fa-solid fa-circle-exclamation" id="gmailModalAlertIcon"></i>
+          <span id="gmailModalAlertText"></span>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="gmail-modal-footer">
+        <button type="button" class="btn-cancel-modal" id="btnCancelGmailModal">
+          <i class="fa-solid fa-xmark"></i> Batal
+        </button>
+        <button type="button" class="btn-start-google-login" id="btnStartGoogleLogin" title="Buka Pop-up Login Google">
+          <i class="fa-brands fa-google"></i>
+          <span>Buka Pop-up Login Google</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Audio & Particles -->
+  <script src="src/shared/audio.js?v=20261008_v19"></script>
+  <script src="src/shared/particles.js?v=20261008_v19"></script>
+
+  <!-- Feature Scripts: Core Ledger & Email Sync Architecture -->
+  <script src="src/keuangan/parser.js?v=20261008_v19"></script>
+  <script src="src/keuangan/storage.js?v=20261008_v19"></script>
+  <script src="src/keuangan/email-parser.js?v=20261008_v19"></script>
+  <script src="src/keuangan/gmail-config.js?v=20261008_v19"></script>
+  <script src="src/keuangan/gmail-sync.js?v=20261008_v19"></script>
+  <script src="src/keuangan/keuangan.js?v=20261008_v19"></script>
 </body>
 </html>
