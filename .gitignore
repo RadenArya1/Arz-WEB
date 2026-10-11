@@ -45,3 +45,4 @@ Error_Absen/
 Thumbs.db
 desktop.ini
 *.tmp
+.playwright-cli/

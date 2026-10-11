@@ -23,7 +23,7 @@
 
   // State Auto-Sync Loop (Seperti Auto Absen)
   let autoSyncTimer = null;
-  let autoSyncIntervalSec = 180; // default 3 menit (180 detik)
+  let autoSyncIntervalSec = 60; // default 1 menit (60 detik)
   let lastSyncTime = null;
   let isLoopActive = false;
   let onLoopStatusChangeCallback = null;
@@ -90,7 +90,7 @@
     };
   }
 
-  function startAutoSyncLoop(intervalSec = 180) {
+  function startAutoSyncLoop(intervalSec = 60) {
     if (!isAutoSyncLoopEnabled()) {
       isLoopActive = false;
       broadcastLoopStatus();
@@ -178,6 +178,8 @@
   let onQueueChangeCallback = null;
   let onStatusChangeCallback = null;
 
+  const TARGET_GMAIL_ACCOUNT = 'raidenarya070906@gmail.com';
+
   /**
    * Helper Penyimpanan State Koneksi & ID Pesan yang Telah Diproses
    */
@@ -186,16 +188,25 @@
       const v = localStorage.getItem(STORAGE_CONNECTED_KEY);
       if (v) {
         const obj = JSON.parse(v);
+        const email = (obj.email && !obj.email.includes('dafinoarya1')) ? obj.email : TARGET_GMAIL_ACCOUNT;
         return {
           connected: Boolean(obj.connected),
-          email: obj.email || obj.login_hint || '',
-          login_hint: obj.email || obj.login_hint || '',
-          locked: Boolean(obj.locked)
+          email: email,
+          login_hint: email,
+          locked: true
         };
       }
     } catch (_) {}
-    return { connected: false, email: '', login_hint: '', locked: false };
+    return { connected: false, email: TARGET_GMAIL_ACCOUNT, login_hint: TARGET_GMAIL_ACCOUNT, locked: true };
   }
+
+  // Bersihkan cache akun lama jika tersimpan dafinoarya1
+  try {
+    const rawConn = localStorage.getItem(STORAGE_CONNECTED_KEY);
+    if (rawConn && rawConn.includes('dafinoarya1')) {
+      localStorage.removeItem(STORAGE_CONNECTED_KEY);
+    }
+  } catch (_) {}
 
   function setConnectionState(state) {
     try {
@@ -403,17 +414,8 @@
 
   let onConnectSuccessCallback = null;
   let onConnectErrorCallback = null;
-  let openModalCallback = null;
-
-  function setModalHandler(fn) {
-    openModalCallback = fn;
-  }
-
-  function openConnectModal(initialAlertMsg = '') {
-    if (typeof openModalCallback === 'function') {
-      openModalCallback(initialAlertMsg);
-    }
-  }
+  function setModalHandler(fn) {}
+  function openConnectModal(initialAlertMsg = '') {}
 
   function onConnectSuccess(fn) {
     onConnectSuccessCallback = fn;
@@ -487,14 +489,18 @@
         },
         error_callback: (err) => {
           console.warn('[GMAIL-SYNC] GSI error callback:', err);
-          const isBlocked = (err && (err.type === 'popup_failed_to_open' || (err.message && err.message.includes('popup')))) || true;
-          const msg = isBlocked 
-            ? '<strong>Pop-up Google Diblokir oleh Chrome!</strong><br><br>' +
-              '1. Lihat <strong>Bilah Alamat (URL)</strong> di bagian atas browser.<br>' +
-              '2. Di <strong>ujung paling kanan</strong> bilah alamat, klik ikon jendela bertanda silang merah 🚫 (<em>Pop-up diblokir</em>).<br>' +
-              '3. Pilih opsi <strong>"Selalu izinkan pop-up dan pengalihan dari http://127.0.0.1:8080"</strong> lalu klik <strong>Selesai</strong>.<br>' +
-              '4. Klik tombol biru <strong>"Buka Pop-up Login Google"</strong> sekali lagi.'
-            : 'Jendela login dibatalkan atau terhalang browser.';
+          let msg = 'Otorisasi Google tidak berhasil.';
+          if (err) {
+            if (err.type === 'popup_closed') {
+              msg = 'Jendela login Google ditutup oleh pengguna.';
+            } else if (err.type === 'popup_failed_to_open') {
+              msg = 'Pop-up login Google diblokir browser. Izinkan pop-up pada bilah URL atas.';
+            } else if ((err.message && err.message.includes('origin_mismatch')) || err.type === 'origin_mismatch') {
+              msg = 'Error 400: origin_mismatch. Daftarkan URL saat ini di Authorized JavaScript origins Google Cloud Console.';
+            } else if (typeof err.message === 'string' && err.message.trim()) {
+              msg = err.message;
+            }
+          }
           broadcastStatus('auth_error', msg);
           if (typeof onConnectErrorCallback === 'function') {
             onConnectErrorCallback(msg);
@@ -521,7 +527,10 @@
     const config = window.GmailConfig || (root && root.GmailConfig);
     const hasValid = config && config.hasValidClientId ? config.hasValidClientId() : false;
     if (!hasValid) {
-      openConnectModal('Silakan masukkan Google OAuth Client ID terlebih dahulu.');
+      broadcastStatus('unconfigured', 'OAuth Client ID Google belum valid.');
+      if (typeof onConnectErrorCallback === 'function') {
+        onConnectErrorCallback('OAuth Client ID Google belum valid.');
+      }
       return;
     }
 
@@ -538,19 +547,12 @@
 
     try {
       const state = getConnectionState();
-      const hasLockedAccount = Boolean(state.connected && (state.email || state.login_hint));
+      // Selalu kunci langsung ke akun target (raidenarya070906@gmail.com) tanpa dialog pemilihan akun
+      const targetEmail = (state.email && !state.email.includes('dafinoarya1')) ? state.email : TARGET_GMAIL_ACCOUNT;
+      const promptVal = '';
+      const hintVal = targetEmail;
 
-      // Jika forceSelectAccount === false dan akun sudah terkunci:
-      // JANGAN memunculkan pilihan akun ('select_account')! Gunakan prompt: '' dan login_hint terkunci!
-      let promptVal = 'select_account';
-      let hintVal = undefined;
-
-      if (!forceSelectAccount && hasLockedAccount) {
-        promptVal = '';
-        hintVal = state.email || state.login_hint;
-      }
-
-      broadcastStatus('connecting', hasLockedAccount ? `Menyambungkan akun ${hintVal}...` : 'Membuka otorisasi Google...');
+      broadcastStatus('connecting', `Menyambungkan akun ${hintVal}...`);
 
       tokenClient.requestAccessToken({
         prompt: promptVal,

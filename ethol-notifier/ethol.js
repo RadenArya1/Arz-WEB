@@ -48,6 +48,7 @@ const GatewayManager = {
   formatUrl(prefix, action) {
     const cleanAction = action.replace(/^\/?(?:api\/absen\/)?/, '');
     if (prefix.includes('api.php')) return `${prefix}${cleanAction}`;
+    if (prefix.endsWith('/api/absen')) return `${prefix}/${cleanAction}`;
     return `${prefix.replace(/\/$/, '')}/api/absen/${cleanAction}`;
   },
 

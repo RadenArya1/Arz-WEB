@@ -4,7 +4,7 @@
    ========================================================= */
 
 (function initProyekWeb() {
-  const STORAGE_KEY = 'grimoire_web_projects_v13';
+  const STORAGE_KEY = 'grimoire_web_projects_v15';
 
   const DEFAULT_PROJECTS = [
     {
@@ -99,7 +99,7 @@
 
   function getProjects() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('grimoire_web_projects_v9') || localStorage.getItem('grimoire_web_projects_v8');
+      const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('grimoire_web_projects_v13') || localStorage.getItem('grimoire_web_projects_v9') || localStorage.getItem('grimoire_web_projects_v8');
       if (stored) {
         let parsed = JSON.parse(stored);
         
@@ -134,7 +134,7 @@
 
         // 3. Audit Anti-Duplikasi Ikon Menyeluruh: Jika masih ada ikon kembar, ganti otomatis dengan ikon unik
         const seenIcons = new Set();
-        const fallbackPool = ['fa-coins', 'fa-calendar-check', 'fa-building-columns', 'fa-book-skull', 'fa-feather-pointed', 'fa-robot', 'fa-compass', 'fa-fire-flame-curved', 'fa-microchip', 'fa-wand-magic-sparkles', 'fa-shield-halved'];
+        const fallbackPool = ['fa-laptop-code', 'fa-coins', 'fa-calendar-check', 'fa-building-columns', 'fa-book-skull', 'fa-feather-pointed', 'fa-robot', 'fa-flask-vial', 'fa-binoculars', 'fa-compass', 'fa-fire-flame-curved', 'fa-microchip', 'fa-wand-magic-sparkles', 'fa-shield-halved'];
         
         parsed.forEach(p => {
           if (!p.icon || seenIcons.has(p.icon)) {

@@ -73,10 +73,6 @@
     }
     return INITIAL_LOGS;
   }
-      console.warn('Gagal membaca log dari localStorage:', e);
-    }
-    return INITIAL_LOGS;
-  }
 
   function saveStoredLogs(logs) {
     try {

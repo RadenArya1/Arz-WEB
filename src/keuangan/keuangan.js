@@ -96,30 +96,11 @@
     const gmailStatusSub = document.getElementById('gmailStatusSub');
     const gmailStatusIcon = document.getElementById('gmailStatusIcon');
     const btnGmailConnect = document.getElementById('btnGmailConnect');
-    const btnGmailConfig = document.getElementById('btnGmailConfig');
     const btnGmailSync = document.getElementById('btnGmailSync');
     const gmailLoopBadge = document.getElementById('gmailLoopBadge');
     const btnGmailReview = document.getElementById('btnGmailReview');
     const btnGmailReviewText = document.getElementById('btnGmailReviewText');
     const btnGmailDisconnect = document.getElementById('btnGmailDisconnect');
-
-    // Elements - Gmail Connect Pop-up Modal
-    const gmailConnectModal = document.getElementById('gmailConnectModal');
-    const btnCloseGmailModal = document.getElementById('btnCloseGmailModal');
-    const btnCancelGmailModal = document.getElementById('btnCancelGmailModal');
-    const btnStartGoogleLogin = document.getElementById('btnStartGoogleLogin');
-    const gmailClientIdInput = document.getElementById('gmailClientIdInput');
-    const btnPasteClientId = document.getElementById('btnPasteClientId');
-    const btnCopyOrigin = document.getElementById('btnCopyOrigin');
-    const copyOriginText = document.getElementById('copyOriginText');
-    const currentOriginDisplay = document.getElementById('currentOriginDisplay');
-    const gmailModalAlert = document.getElementById('gmailModalAlert');
-    const gmailModalAlertText = document.getElementById('gmailModalAlertText');
-    const gmailModalAlertIcon = document.getElementById('gmailModalAlertIcon');
-    const gmailConnectedAccountBox = document.getElementById('gmailConnectedAccountBox');
-    const gmailConnectedEmailDisplay = document.getElementById('gmailConnectedEmailDisplay');
-    const btnGmailSwitchAccount = document.getElementById('btnGmailSwitchAccount');
-
     const reviewCardTitle = document.getElementById('reviewCardTitle');
     const reviewCardIcon = document.getElementById('reviewCardIcon');
     const reviewSourceBadge = document.getElementById('reviewSourceBadge');
@@ -943,189 +924,7 @@
       });
     }
 
-    // Modal Hubungkan Gmail Handlers
-    function showGmailModalAlert(message, type = 'warning') {
-      if (!gmailModalAlert || !gmailModalAlertText) return;
-      gmailModalAlertText.innerHTML = message;
-      gmailModalAlert.className = 'gmail-modal-alert ' + type;
-      if (gmailModalAlertIcon) {
-        if (type === 'error') {
-          gmailModalAlertIcon.className = 'fa-solid fa-triangle-exclamation';
-        } else if (type === 'success') {
-          gmailModalAlertIcon.className = 'fa-solid fa-circle-check';
-        } else {
-          gmailModalAlertIcon.className = 'fa-solid fa-circle-info';
-        }
-      }
-      gmailModalAlert.style.display = 'flex';
-      setTimeout(() => {
-        gmailModalAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 50);
-    }
 
-    function hideGmailModalAlert() {
-      if (gmailModalAlert) {
-        gmailModalAlert.style.display = 'none';
-      }
-    }
-
-    function openGmailConnectModal(initialAlertMsg = '', alertType = 'warning') {
-      if (!gmailConnectModal) return;
-      lastActiveTrigger = document.activeElement;
-
-      // Sinkronkan origin browser saat ini
-      if (currentOriginDisplay) {
-        currentOriginDisplay.textContent = window.location.origin;
-      }
-
-      // Ambil Client ID yang sudah tersimpan jika ada
-      if (gmailClientIdInput && window.GmailConfig) {
-        const curId = window.GmailConfig.getClientId ? window.GmailConfig.getClientId() : '';
-        gmailClientIdInput.value = curId || '';
-      }
-
-      // Sinkronkan state checkbox auto-input
-      if (chkGmailAutoInput && window.GmailSync && typeof window.GmailSync.isAutoInputEnabled === 'function') {
-        chkGmailAutoInput.checked = window.GmailSync.isAutoInputEnabled();
-      }
-
-      // Sinkronkan state checkbox auto-check berkala (seperti auto absen)
-      if (chkGmailAutoLoop && window.GmailSync && typeof window.GmailSync.isAutoSyncLoopEnabled === 'function') {
-        chkGmailAutoLoop.checked = window.GmailSync.isAutoSyncLoopEnabled();
-      }
-
-      // Periksa apakah akun sudah terhubung & terkunci permanen
-      if (gmailConnectedAccountBox && gmailConnectedEmailDisplay) {
-        const connState = window.GmailSync && typeof window.GmailSync.getConnectionState === 'function'
-          ? window.GmailSync.getConnectionState()
-          : { connected: false };
-        if (connState.connected && (connState.email || connState.login_hint)) {
-          const lockedEmail = connState.email || connState.login_hint;
-          gmailConnectedAccountBox.style.display = 'flex';
-          gmailConnectedEmailDisplay.textContent = lockedEmail;
-          if (btnStartGoogleLogin) {
-            btnStartGoogleLogin.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> <span>Sinkronkan Akun Ini</span>';
-          }
-        } else {
-          gmailConnectedAccountBox.style.display = 'none';
-          if (btnStartGoogleLogin) {
-            btnStartGoogleLogin.innerHTML = '<i class="fa-brands fa-google"></i> <span>Buka Pop-up Login Google</span>';
-          }
-        }
-      }
-
-      if (initialAlertMsg) {
-        showGmailModalAlert(initialAlertMsg, alertType);
-      } else {
-        hideGmailModalAlert();
-      }
-
-      gmailConnectModal.style.display = 'flex';
-      if (btnStartGoogleLogin) {
-        btnStartGoogleLogin.focus();
-      }
-    }
-
-    function closeGmailConnectModal() {
-      if (gmailConnectModal) {
-        gmailConnectModal.style.display = 'none';
-      }
-      hideGmailModalAlert();
-      if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
-        lastActiveTrigger.focus();
-      }
-    }
-
-    if (btnCloseGmailModal) btnCloseGmailModal.addEventListener('click', closeGmailConnectModal);
-    if (btnCancelGmailModal) btnCancelGmailModal.addEventListener('click', closeGmailConnectModal);
-    if (gmailConnectModal) {
-      gmailConnectModal.addEventListener('click', (e) => {
-        if (e.target === gmailConnectModal) closeGmailConnectModal();
-      });
-    }
-
-    if (btnCopyOrigin) {
-      btnCopyOrigin.addEventListener('click', () => {
-        const origin = window.location.origin;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(origin).then(() => {
-            if (copyOriginText) copyOriginText.textContent = 'Tersalin!';
-            setTimeout(() => { if (copyOriginText) copyOriginText.textContent = 'Salin'; }, 2000);
-          }).catch(() => {
-            if (copyOriginText) copyOriginText.textContent = 'Tersalin!';
-          });
-        } else {
-          if (copyOriginText) copyOriginText.textContent = 'Tersalin!';
-        }
-      });
-    }
-
-    if (btnPasteClientId) {
-      btnPasteClientId.addEventListener('click', () => {
-        if (navigator.clipboard && navigator.clipboard.readText) {
-          navigator.clipboard.readText().then(text => {
-            if (text && text.trim() && gmailClientIdInput) {
-              gmailClientIdInput.value = text.trim();
-              gmailClientIdInput.focus();
-              hideGmailModalAlert();
-            }
-          }).catch(() => {});
-        }
-      });
-    }
-
-    if (chkGmailAutoInput) {
-      chkGmailAutoInput.addEventListener('change', () => {
-        if (window.GmailSync && typeof window.GmailSync.setAutoInputEnabled === 'function') {
-          window.GmailSync.setAutoInputEnabled(chkGmailAutoInput.checked);
-        }
-      });
-    }
-
-    if (chkGmailAutoLoop) {
-      chkGmailAutoLoop.addEventListener('change', () => {
-        if (window.GmailSync && typeof window.GmailSync.setAutoSyncLoopEnabled === 'function') {
-          window.GmailSync.setAutoSyncLoopEnabled(chkGmailAutoLoop.checked);
-        }
-      });
-    }
-
-    if (btnGmailSwitchAccount) {
-      btnGmailSwitchAccount.addEventListener('click', () => {
-        if (confirm('Apakah Anda ingin berganti ke akun Google yang lain?')) {
-          showGmailModalAlert('Membuka dialog pemilihan akun Google...', 'info');
-          if (window.GmailSync && typeof window.GmailSync.switchAccount === 'function') {
-            window.GmailSync.switchAccount();
-          }
-        }
-      });
-    }
-
-    if (btnStartGoogleLogin) {
-      btnStartGoogleLogin.addEventListener('click', () => {
-        let inputId = gmailClientIdInput ? gmailClientIdInput.value.trim() : '';
-        if (!inputId && window.GmailConfig && typeof window.GmailConfig.getClientId === 'function') {
-          inputId = window.GmailConfig.getClientId();
-        }
-        if (!inputId || inputId === 'GANTI_DENGAN_CLIENT_ID' || inputId.length < 10) {
-          showGmailModalAlert('Silakan tempel atau masukkan OAuth Client ID Google Anda terlebih dahulu.', 'warning');
-          if (gmailClientIdInput) gmailClientIdInput.focus();
-          return;
-        }
-
-        // Simpan Client ID ke localStorage
-        if (window.GmailConfig && typeof window.GmailConfig.setClientId === 'function') {
-          window.GmailConfig.setClientId(inputId);
-        }
-
-        showGmailModalAlert('Menyambungkan ke akun Google...', 'success');
-
-        // Buka Pop-up Otorisasi Google langsung dalam thread event klik ini (tanpa ganti akun)
-        if (window.GmailSync) {
-          window.GmailSync.loginWithGoogle({ forceSelectAccount: false });
-        }
-      });
-    }
 
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeImageModal);
     if (imageModal) {
@@ -1140,12 +939,10 @@
         closeImageModal();
         closeMultiMonthModal();
         closeDeleteConfirmModal();
-        closeGmailConnectModal();
       } else if (e.key === 'Tab') {
         trapModalFocus(imageModal, e);
         trapModalFocus(multiMonthModal, e);
         trapModalFocus(deleteConfirmModal, e);
-        trapModalFocus(gmailConnectModal, e);
       }
     });
 
@@ -1735,32 +1532,11 @@
     // INISIALISASI INTEGRASI GMAIL SYNC (ADITIF & TAHAN GAGAL)
     // =========================================================
     if (typeof window.GmailSync !== 'undefined') {
-      if (typeof window.GmailSync.setModalHandler === 'function') {
-        window.GmailSync.setModalHandler((msg) => openGmailConnectModal(msg, 'warning'));
-      }
-
-      if (typeof window.GmailSync.onConnectSuccess === 'function') {
-        window.GmailSync.onConnectSuccess(() => {
-          closeGmailConnectModal();
-        });
-      }
-
-      if (typeof window.GmailSync.onConnectError === 'function') {
-        window.GmailSync.onConnectError((err) => {
-          const msg = typeof err === 'string' ? err : 'Pop-up Google diblokir browser. Izinkan pop-up pada bilah URL atas.';
-          showGmailModalAlert(msg, 'error');
-        });
-      }
-
       if (btnGmailConnect) {
         btnGmailConnect.addEventListener('click', () => {
-          openGmailConnectModal();
-        });
-      }
-
-      if (btnGmailConfig) {
-        btnGmailConfig.addEventListener('click', () => {
-          openGmailConnectModal();
+          if (window.GmailSync && typeof window.GmailSync.loginWithGoogle === 'function') {
+            window.GmailSync.loginWithGoogle({ forceSelectAccount: false });
+          }
         });
       }
 
@@ -1784,30 +1560,13 @@
         });
       }
 
-      if (typeof window.GmailSync.setModalHandler === 'function') {
-        window.GmailSync.setModalHandler((msg) => {
-          openGmailConnectModal(msg, 'warning');
-        });
-      }
-
-      if (typeof window.GmailSync.onConnectError === 'function') {
-        window.GmailSync.onConnectError((err) => {
-          showGmailModalAlert(err, 'error');
-        });
-      }
-
-      if (typeof window.GmailSync.onConnectSuccess === 'function') {
-        window.GmailSync.onConnectSuccess(() => {
-          closeGmailConnectModal();
-        });
-      }
-
       window.GmailSync.onStatusChange(({ state, message, details }) => {
         const connState = window.GmailSync && typeof window.GmailSync.getConnectionState === 'function'
           ? window.GmailSync.getConnectionState()
           : { connected: false };
         const activeEmail = (details && details.email) || connState.email || connState.login_hint || '';
         const emailTag = activeEmail ? ` (${activeEmail})` : '';
+        const isConnectedState = Boolean(connState.connected || state === 'connected' || state === 'idle' || state === 'has_items' || state === 'syncing' || state === 'silent_syncing');
 
         if (gmailAccountEmail) {
           if (isConnectedState && activeEmail) {
@@ -1836,8 +1595,6 @@
         if (gmailStatusSub && message) {
           gmailStatusSub.textContent = message;
         }
-
-        const isConnectedState = Boolean(connState.connected || state === 'connected' || state === 'idle' || state === 'has_items' || state === 'syncing' || state === 'silent_syncing');
 
         if (gmailSyncStrip) {
           gmailSyncStrip.classList.toggle('connected', isConnectedState);

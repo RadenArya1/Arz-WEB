@@ -484,10 +484,13 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  // ── CORS Headers (Mendukung permintaan lintas origin / HTTPS) ──
+  // ── CORS & Security Headers (Mendukung permintaan lintas origin & pengamanan) ──
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -497,6 +500,12 @@ const server = http.createServer((req, res) => {
   // ── Redirect URL Lawas ethol.html ke Folder Khusus ethol-notifier ──
   if (url === '/ethol.html') {
     res.writeHead(302, { 'Location': '/ethol-notifier/index.html' });
+    return res.end();
+  }
+
+  // ── Favicon Graceful Response ──
+  if (url === '/favicon.ico') {
+    res.writeHead(204);
     return res.end();
   }
 
@@ -1207,6 +1216,27 @@ const server = http.createServer((req, res) => {
   }
   const extname = String(path.extname(filePath)).toLowerCase();
   const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+  // ── Proteksi Berkas Sensitif & Path Traversal Guard ──
+  const normalizedPath = path.normalize(filePath);
+  if (!normalizedPath.startsWith(__dirname)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    return res.end('403 Forbidden: Path Traversal Detected');
+  }
+
+  const blockedPatterns = [
+    /^\.git/i,
+    /vault.*\.json$/i,
+    /ethol-config\.json$/i,
+    /^\.env/i,
+    /\.bak/i,
+    /node_modules/i
+  ];
+  const relativeFile = path.relative(__dirname, normalizedPath).replace(/\\/g, '/');
+  if (blockedPatterns.some(pat => pat.test(relativeFile) || pat.test(path.basename(normalizedPath)))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    return res.end('403 Forbidden: Access to sensitive file is prohibited');
+  }
 
   fs.stat(filePath, (err, stats) => {
     if (err) {

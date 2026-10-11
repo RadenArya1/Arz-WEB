@@ -60,7 +60,7 @@ flowchart TD
   - **Dual-Stream Cashflow Ledger:** Pencatatan arus kas murni masuk (*inflow*) dan keluar (*outflow*) tanpa beban kategori kompleks.
   - **AI OCR Vision (Tesseract.js):** Ekstraksi teks struk transfer & nota belanja otomatis via clipboard paste (`Ctrl + V`) dan drag-drop.
   - **Smart Gmail BCA Auto-Sync (OAuth 2.0 Client-Side):** Integrasi resmi Google Identity Services (GIS) tanpa backend perantara (Zero-Backend Token Leakage).
-  - **Auto-Check Loop Engine (Mekanisme Seperti Auto Absen):** Pemindaian latar belakang berkala setiap 3 menit (180 detik) dan instant check saat tab browser aktif kembali.
+  - **Auto-Check Loop Engine (Mekanisme Seperti Auto Absen):** Pemindaian latar belakang berkala setiap 1 menit (60 detik) dan instant check saat tab browser aktif kembali.
   - **Otomatis Input ke Kas:** Transaksi BCA resmi (QRIS, m-Transfer, KlikBCA) langsung tercatat ke Pemasukan/Pengeluaran & Saldo dengan notifikasi chime audio-visual.
   - **Direct Gmail Display:** Tampilan bilah minimalis yang langsung menyajikan alamat email akun Gmail pengguna saja dengan font monospace elegan.
   - **Dual-Box Multi-Month Analytics:** Komparasi visual berdampingan antara bulan pilihan dan bulan berjalan via Chart.js dual bar.

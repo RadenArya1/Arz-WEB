@@ -243,9 +243,7 @@
               <i class="fa-solid fa-inbox"></i>
               <span id="btnGmailReviewText">Tinjau (0)</span>
             </button>
-            <button type="button" class="btn-gmail-config" id="btnGmailConfig" title="Konfigurasi Client ID Google" aria-label="Konfigurasi Client ID Google">
-              <i class="fa-solid fa-gear"></i>
-            </button>
+
             <button type="button" class="btn-gmail-disconnect" id="btnGmailDisconnect" style="display: none;" title="Putuskan koneksi Gmail" aria-label="Putuskan koneksi">
               <i class="fa-solid fa-link-slash"></i>
             </button>
@@ -594,137 +592,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL HUBUNGKAN GMAIL (GOOGLE OAUTH POP-UP) ================= -->
-  <div class="image-modal-backdrop" id="gmailConnectModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="gmailModalTitle">
-    <div class="image-modal-dialog gmail-modal-dialog">
-      <!-- Modal Header -->
-      <div class="image-modal-header gmail-modal-header">
-        <div class="modal-title-group">
-          <div class="gmail-modal-badge-icon">
-            <i class="fa-brands fa-google"></i>
-          </div>
-          <div>
-            <h3 id="gmailModalTitle">Hubungkan Akun Gmail BCA</h3>
-            <span class="modal-subtext">Google Identity Services • 100% Client-Side In-Memory Token</span>
-          </div>
-        </div>
-        <button type="button" class="btn-close-modal" id="btnCloseGmailModal" title="Tutup Modal" aria-label="Tutup modal">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
 
-      <!-- Modal Body -->
-      <div class="gmail-modal-body">
-        <!-- Security & Privacy Guarantee Banner -->
-        <div class="gmail-security-banner">
-          <div class="security-banner-icon">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-          <div class="security-banner-text">
-            <strong>100% Client-Side &amp; Privasi Terlindungi:</strong>
-            <p>Otorisasi resmi Google OAuth 2.0 berjalan langsung di browser Anda. Hanya membaca email transaksi resmi dari <code>bca@bca.co.id</code> (izin <code>gmail.readonly</code>). Token akses disimpan murni di memori RAM dan tidak pernah dikirim ke server pihak ketiga.</p>
-          </div>
-        </div>
-
-        <!-- Setup Card & Client ID Configuration -->
-        <div class="gmail-setup-card">
-          <div class="setup-header">
-            <span class="setup-step-tag"><i class="fa-solid fa-key"></i> OAuth 2.0 Client ID</span>
-            <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="setup-cloud-link" title="Buka Google Cloud Console di tab baru">
-              <span>Google Cloud Console</span>
-              <i class="fa-solid fa-arrow-up-right-from-square"></i>
-            </a>
-          </div>
-
-          <p class="setup-desc">
-            Masukkan Client ID (tipe <em>Web Application</em>) dari Google Cloud Console Anda:
-          </p>
-
-          <!-- Input Client ID Field -->
-          <div class="gmail-input-group">
-            <label for="gmailClientIdInput" class="gmail-input-label">Google OAuth Client ID</label>
-            <div class="gmail-input-wrap">
-              <i class="fa-solid fa-id-badge gmail-input-icon"></i>
-              <input 
-                type="text" 
-                id="gmailClientIdInput" 
-                class="gmail-client-id-input" 
-                placeholder="misal: 1234567890-xxx.apps.googleusercontent.com" 
-                autocomplete="off" 
-                spellcheck="false"
-              />
-              <button type="button" class="btn-paste-client-id" id="btnPasteClientId" title="Tempel dari Clipboard">
-                <i class="fa-solid fa-paste"></i>
-                <span>Tempel</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Origin URL Helper -->
-          <div class="origin-helper-box">
-            <div class="origin-helper-info">
-              <span class="origin-label"><i class="fa-solid fa-globe"></i> Authorized JavaScript Origin:</span>
-              <code class="origin-code-val" id="currentOriginDisplay">http://127.0.0.1:8080</code>
-            </div>
-            <button type="button" class="btn-copy-origin" id="btnCopyOrigin" title="Salin Origin URL">
-              <i class="fa-regular fa-copy"></i>
-              <span id="copyOriginText">Salin</span>
-            </button>
-          </div>
-          <p class="origin-tip">
-            *Pastikan URL di atas sudah terdaftar di <strong>Authorized JavaScript origins</strong> pada setelan OAuth Client ID di Google Cloud Console.
-          </p>
-
-          <!-- Setelan Auto-Input Transaksi Langsung ke Kas -->
-          <div class="gmail-auto-input-box" style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding: 12px 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px;">
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-              <span style="font-weight: 600; font-size: 0.85rem; color: #f0fdf4;"><i class="fa-solid fa-bolt" style="color: #4ade80;"></i> Otomatis Input ke Catatan Kas</span>
-              <span style="font-size: 0.75rem; color: #94a3b8;">Transaksi BCA resmi langsung masuk ke Pemasukan/Pengeluaran &amp; Saldo</span>
-            </div>
-            <input type="checkbox" id="chkGmailAutoInput" checked style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;" title="Aktifkan agar transaksi BCA otomatis tersimpan ke catatan kas" />
-          </div>
-
-          <!-- Setelan Auto-Check Berkala Latar Belakang (Seperti Auto Absen) -->
-          <div class="gmail-auto-loop-box" style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px;">
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-              <span style="font-weight: 600; font-size: 0.85rem; color: #f0f9ff;"><i class="fa-solid fa-arrows-rotate" style="color: #38bdf8;"></i> Mode Auto-Check Berkala (Seperti Auto Absen)</span>
-              <span style="font-size: 0.75rem; color: #94a3b8;">Otomatis memindai transaksi baru setiap 3 menit di latar belakang</span>
-            </div>
-            <input type="checkbox" id="chkGmailAutoLoop" checked style="width: 20px; height: 20px; cursor: pointer; accent-color: #0284c7;" title="Aktifkan mode pengawasan transaksi otomatis berkala" />
-          </div>
-
-          <!-- Informasi Akun Terhubung & Opsi Ganti Akun -->
-          <div class="gmail-connected-account-box" id="gmailConnectedAccountBox" style="display: none; align-items: center; justify-content: space-between; margin-top: 14px; padding: 12px 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px;">
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-              <span style="font-weight: 600; font-size: 0.85rem; color: #dbeafe;"><i class="fa-solid fa-lock" style="color: #60a5fa;"></i> Akun Terkunci Permanen</span>
-              <span style="font-size: 0.8rem; color: #93c5fd; font-family: monospace;" id="gmailConnectedEmailDisplay">-</span>
-            </div>
-            <button type="button" class="btn-switch-account" id="btnGmailSwitchAccount" title="Hanya gunakan tombol ini jika Anda ingin berganti akun Gmail">
-              <i class="fa-solid fa-arrow-right-arrow-left"></i>
-              <span>Ganti Akun</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Alert / Feedback Box inside Modal -->
-        <div class="gmail-modal-alert" id="gmailModalAlert" style="display: none;">
-          <i class="fa-solid fa-circle-exclamation" id="gmailModalAlertIcon"></i>
-          <span id="gmailModalAlertText"></span>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="gmail-modal-footer">
-        <button type="button" class="btn-cancel-modal" id="btnCancelGmailModal">
-          <i class="fa-solid fa-xmark"></i> Batal
-        </button>
-        <button type="button" class="btn-start-google-login" id="btnStartGoogleLogin" title="Buka Pop-up Login Google">
-          <i class="fa-brands fa-google"></i>
-          <span>Buka Pop-up Login Google</span>
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- Shared Audio & Particles -->
   <script src="src/shared/audio.js?v=20261008_v19"></script>
@@ -735,7 +603,7 @@
   <script src="src/keuangan/storage.js?v=20261008_v19"></script>
   <script src="src/keuangan/email-parser.js?v=20261008_v19"></script>
   <script src="src/keuangan/gmail-config.js?v=20261008_v19"></script>
-  <script src="src/keuangan/gmail-sync.js?v=20261008_v19"></script>
+  <script src="src/keuangan/gmail-sync.js?v=20261011_v20"></script>
   <script src="src/keuangan/keuangan.js?v=20261008_v19"></script>
 </body>
 </html>

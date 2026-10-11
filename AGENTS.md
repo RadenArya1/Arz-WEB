@@ -37,7 +37,7 @@ Asisten AI **WAJIB MENJALANKAN 5 TAHAPAN UTAMA SECARA OTOMATIS TANPA MEMINTA KON
 - Asisten AI **WAJIB secara otomatis memperbarui file `Arz-WEB.md`** sebelum atau bersamaan dengan migrasi ke server web:
   1. **Pembaruan Ringkasan Fitur Ekosistem (Header & Overview)**: Memastikan daftar seluruh pilar aplikasi web yang telah dibuat pada pengantar dokumen (paragraf 1 dan daftar pilar ekosistem) selalu mutakhir (Grimoire Dashboard, Arcanum Finance, Ethol Academic Notifier, dsb.).
   2. **Pembaruan Seksi Spesifikasi Teknis**: Menambahkan seksi spesifikasi teknis baru atau memperbarui seksi spesifikasi modul terkait jika ada fitur/arsitektur yang ditambahkan atau diubah.
-  3. **Pencatatan Tabel Riwayat**: Mencatat seluruh fitur baru, refactoring kode, aset baru, atau perbaikan bug pada tabel **Bagian V: Log Riwayat Pembaruan & Progres Implementasi**.
+  3. **Pengalihan Riwayat ke GitHub (Tanpa Tabel Manual)**: Fungsi tabel riwayat di `Arz-WEB.md` telah ditiadakan. Seluruh riwayat pembaruan dan changelog dialihkan sepenuhnya ke Git Commit History di GitHub portofolio (`https://github.com/RadenArya1/Arz-WEB/commits/main`).
   4. **Pembaruan Portofolio `README.md`**: Menyelaraskan informasi fitur dan arsitektur pada presentasi portofolio GitHub.
   5. Menjamin dokumentasi selalu sinkron 1:1 dengan kode produksi yang di-deploy.
 
