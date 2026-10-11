@@ -79,8 +79,10 @@ body.keuangan-body {
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
-  overflow-x: hidden;
-  overscroll-behavior-y: contain;
+  overflow-x: clip;
+  max-width: 100%;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -1892,7 +1894,8 @@ button, a, input, select {
   overflow-x: auto;
   position: relative;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   background: rgba(6, 14, 9, 0.7);
@@ -3112,9 +3115,15 @@ textarea:focus-visible,
 }
 
 @media (max-width: 768px) {
-  html, body {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
+  html {
+    max-width: 100%;
+  }
+
+  body.keuangan-body {
+    overflow-x: clip !important;
+    max-width: 100% !important;
+    overscroll-behavior-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .executive-header {

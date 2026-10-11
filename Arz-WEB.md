@@ -374,11 +374,13 @@ Dashboard menyajikan empat kartu ringkasan keuangan bulan berjalan:
   - `WIWIN CAHYANI - BCA`: Pemasukan `+ Rp 10.000` (12/09/2026 14:59:00).
   - Ringkasan September 2026: Pemasukan `Rp 3.514.346`, Pengeluaran `Rp 1.417.900`, Surplus Bersih `+ Rp 2.096.446`, Total Transaksi Aktif: 15.
 
-### 8. Arsitektur Responsif Layar HP (Mobile Viewport Fit)
-- **Eliminasi Zoom-Out & Horizontal Overflow**: Mengunci lebar seluruh komponen di `100vw` dengan `max-width: 100vw` dan `overflow-x: hidden`.
+### 8. Arsitektur Responsif Layar HP (Mobile Viewport Fit & Anti-Scroll Trap)
+- **Eliminasi Zoom-Out & Horizontal Overflow**: Mengunci lebar seluruh komponen dengan `max-width: 100%`, `overflow-x: clip !important` pada `body.keuangan-body`, serta membiarkan `html` bertindak sebagai root scroller alami bebas double-nested container.
+- **Root Touch Scroll Natural & Anti-Trap (`overscroll-behavior-y: auto`)**: Mengizinkan propagasi gestur usapan jempol vertikal tanpa tertelan oleh root container, serta mempertahankan isolasi scroll horizontal pada `.table-scroll-container` (`overscroll-behavior-x: contain; overscroll-behavior-y: auto;`).
+- **Android Safe Area Insets**: Seluruh header (`.app-topbar`) mengadopsi `env(safe-area-inset-top)` dan dynamic padding horizontal agar ramah notch dan punch-hole kamera smartphone.
 - **Text Wrapping Protektif**: Menggunakan `white-space: normal`, `word-break: break-word`, dan `overflow-wrap: anywhere` pada nama merchant dan rincian transaksi panjang (misal QRIS Bank Jatim, ATM BCA).
 - **Grid KPI Adaptif**: Grid kartu KPI menyesuaikan menjadi `2x2` kompak dan fleksibel (`repeat(2, minmax(0, 1fr))`).
-- **Tabel Responsif**: Tabel riwayat transaksi dibungkus dalam `.table-scroll-container` yang dapat digeser horizontal tanpa memicu kebocoran layout.
+- **Tabel Responsif**: Tabel riwayat transaksi dibungkus dalam `.table-scroll-container` (`-webkit-overflow-scrolling: touch;`) yang dapat digeser horizontal tanpa memicu kebocoran layout atau mengunci scroll vertikal halaman.
 
 ### 9. Integrasi Smart Gmail BCA Auto-Sync & Auto-Check Loop Engine (`src/keuangan/`)
 - **100% Client-Side OAuth 2.0 (Google Identity Services - GIS)**:
