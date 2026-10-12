@@ -18,7 +18,8 @@ const CONFIG = {
   baseUrl: 'https://ethol.pens.ac.id',
   userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   retentionDays: 90,
-  deadlineMaxDays: 7, // Hanya simpan tugas mendekati tenggat <= 7 hari
+  deadlinePastMaxDays: 7, // Maksimal 1 minggu sebelum (terlambat <= 7 hari yang lalu)
+  deadlineMaxDays: 7, // Maksimal 1 minggu mendatang (mendekati tenggat <= 7 hari ke depan)
 };
 
 // ─── LOGGING SYSTEM (Master Humanizer Formatting) ───────────
@@ -604,9 +605,16 @@ async function runAutoAbsenDanTugas() {
     for (const item of tasksPerCourse) {
       const { c, cName, courseIdx, rawTasks } = item;
       for (const t of rawTasks) {
-        const isSubmitted = !!t.submission_time || t.is_submitted === true || t.submitted === 1;
+        const isSubmitted = !!t.submission_time ||
+                            !!t.submission_file ||
+                            !!t.nomor_tugas_mahasiswa ||
+                            !!t.nomor_tugas_file_mahasiswa ||
+                            t.is_submitted === true ||
+                            t.submitted === 1 ||
+                            (typeof t.status === 'string' && (t.status.toLowerCase().includes('sudah') || t.status.toLowerCase().includes('selesai')));
         const isClosed = t.tutup === 1 || t.is_closed === true;
 
+        // Jika sudah selesai dikumpulkan atau sudah ditutup, tidak perlu diperlihatkan
         if (isSubmitted || isClosed) continue;
 
         const title = t.title || t.judul || 'Tugas Kuliah';
@@ -615,7 +623,10 @@ async function runAutoAbsenDanTugas() {
 
         if (dObj) {
           const diffDays = (dObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-          if (diffDays > CONFIG.deadlineMaxDays) continue;
+          // Jendela waktu: hanya tampilkan tugas dalam rentang 1 minggu sebelum (-7 hari) hingga 1 minggu mendatang (+7 hari)
+          if (diffDays < -CONFIG.deadlinePastMaxDays || diffDays > CONFIG.deadlineMaxDays) {
+            continue;
+          }
         }
 
         taskResults.push({

@@ -74,7 +74,7 @@ flowchart TD
   - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu detail kehadiran dan verifikasi status.
   - **Dynamic Theme Metamorphosis:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif.
   - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
-  - **Concurrent Task Scraper:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (≤ 7 hari) tersimpan otomatis di `tasks.json`.
+  - **Concurrent Task Scraper:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (jendela waktu -7 s/d +7 hari & filter status selesai ketat) tersimpan otomatis di `tasks.json`.
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
 
 ### 4. 🔬 Lab & Visual Inspector (`lab/` — Localhost Sandbox)

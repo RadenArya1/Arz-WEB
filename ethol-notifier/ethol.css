@@ -261,7 +261,9 @@ body, body.ethol-body {
   z-index: 1;
   max-width: 1360px;
   margin: 0 auto;
-  padding: var(--space-lg) var(--space-xl) 100px var(--space-xl);
+  min-height: 100dvh;
+  padding: calc(var(--space-lg) + env(safe-area-inset-top, 0px)) calc(var(--space-xl) + env(safe-area-inset-right, 0px)) calc(100px + env(safe-area-inset-bottom, 0px)) calc(var(--space-xl) + env(safe-area-inset-left, 0px));
+  overscroll-behavior-y: contain;
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
@@ -2329,6 +2331,7 @@ body.loop-active .diagnostic-tray.expanded {
   max-height: 260px;
   overflow-y: auto;
   overscroll-behavior-y: contain; /* Scroll inside tray, never push outer page */
+  -webkit-overflow-scrolling: touch;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
   font-size: 0.77rem;
   line-height: 1.6;
@@ -3227,16 +3230,17 @@ body.loop-active .toast-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 48px;
+  padding: 0 16px;
   border-radius: var(--radius-sm);
   background: rgba(56, 189, 248, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.3);
   color: var(--cyan-bright);
   font-family: var(--font-sans);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  touch-action: manipulation;
   transition: all 0.2s ease;
 }
 

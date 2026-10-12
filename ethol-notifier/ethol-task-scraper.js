@@ -580,6 +580,20 @@ async function runTaskScraper() {
       if (taskAudit.isSubmitted) {
         log.info(`✓ Tugas "${task.judul}" SUDAH DIKUMPULKAN (${taskAudit.statusLabel}) [Deadline: ${taskAudit.deadline || '-'}]. Melewati tugas ini.`);
       } else {
+        // Validasi jendela tenggat waktu: 1 minggu sebelum (-7 hari) s/d 1 minggu mendatang (+7 hari)
+        let isWithinWindow = true;
+        if (taskAudit.deadline) {
+          const dlDate = new Date(taskAudit.deadline);
+          if (!isNaN(dlDate.getTime())) {
+            const diffDays = (dlDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+            if (diffDays < -7 || diffDays > 7) {
+              isWithinWindow = false;
+              log.info(`[DILEWATI] Tenggat waktu di luar jendela 1 minggu (-7 s/d +7 hari): "${task.judul}" [Deadline: ${taskAudit.deadline}]`);
+            }
+          }
+        }
+        if (!isWithinWindow) continue;
+
         log.warn(`⚡ Tugas "${task.judul}" BELUM MENGUMPULKAN! (${taskAudit.statusLabel}) [Deadline: ${taskAudit.deadline || '-'}]. Menambahkan ke daftar pantau.`);
         
         const hTag = calculateHTag(taskAudit.deadline);
