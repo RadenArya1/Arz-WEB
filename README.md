@@ -76,6 +76,7 @@ flowchart TD
   - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
   - **Concurrent Task Scraper:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (jendela waktu -7 s/d +7 hari & filter status selesai ketat) tersimpan otomatis di `tasks.json`.
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
+  - **Mobile-First & Anti-Scroll Trap Engine:** Antarmuka responsif ramah jempol (100dvh & safe area insets), tata letak grid adaptif seimbang, dan eliminasi total scroll trap untuk pengalaman browsing smartphone yang mulus.
 
 ### 4. 🔬 Lab & Visual Inspector (`lab/` — Localhost Sandbox)
 *Laboratorium Visualisasi & Sandbox Pengujian Eksklusif Localhost*
