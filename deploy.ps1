@@ -74,6 +74,10 @@ $etholProfile = Join-Path $targetDir "ethol-notifier\.puppeteer_profile"
 if (Test-Path $etholProfile) {
     Remove-Item -Path $etholProfile -Recurse -Force -ErrorAction SilentlyContinue
 }
+$etholPublicConfig = Join-Path $targetDir "ethol-notifier\ethol-config.json"
+if (Test-Path $etholPublicConfig) {
+    Remove-Item -Path $etholPublicConfig -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host "[1/3] Menyalin file portal inti website (index.html, keuangan.html)..." -ForegroundColor Yellow
 Copy-Item -Path (Join-Path $sourceDir "index.html") -Destination $targetDir -Force
@@ -141,6 +145,10 @@ if (Test-Path (Join-Path $sourceDir "ethol-notifier\ethol-task-scraper.js")) {
 }
 if (Test-Path (Join-Path $sourceDir "ethol-notifier\tasks.json")) {
     Copy-Item -Path (Join-Path $sourceDir "ethol-notifier\tasks.json") -Destination (Join-Path $etholBackendTarget "tasks.json") -Force
+}
+if (Test-Path (Join-Path $sourceDir "ethol-notifier\ethol-config.json")) {
+    # Salin kredensial khusus ke direktori internal privat CasaOS (ethol-backend), terisolasi dari Nginx publik
+    Copy-Item -Path (Join-Path $sourceDir "ethol-notifier\ethol-config.json") -Destination (Join-Path $etholBackendTarget "ethol-config.json") -Force
 }
 if (Test-Path (Join-Path $sourceDir "logs_buffer.json")) {
     Copy-Item -Path (Join-Path $sourceDir "logs_buffer.json") -Destination (Join-Path $etholBackendTarget "logs_buffer.json") -Force

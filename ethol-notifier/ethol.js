@@ -16,7 +16,10 @@ const state = {
   nextRunTs:        null,
   logCount:         0,
   presensiList:     [],
-  diagnosticsOpen:  false
+  diagnosticsOpen:  false,
+  lastRunResult:    null,
+  lastRunError:     null,
+  _lastZeroPoll:    0
 };
 
 const RING_CIRCUMFERENCE = 326.73; // 2 * PI * 52
@@ -557,8 +560,14 @@ function updateRadialCountdown() {
   const diffMs = state.nextRunTs - Date.now();
   if (diffMs <= 0) {
     setHubState('running', 'Menjalankan Presensi Otomatis…', 'Engine sedang memindai kelas dan mengonfirmasi presensi ke portal Ethol.', 1);
+    // Pemicu polling status jika waktu habis agar frontend segera menangkap status riil backend
+    if (!state._lastZeroPoll || (Date.now() - state._lastZeroPoll > 3000)) {
+      state._lastZeroPoll = Date.now();
+      pollStatus();
+    }
     return;
   }
+  state._lastZeroPoll = 0;
 
   const totalDurationMs = state.loopDurationSec * 1000;
   const ratio = Math.max(0, Math.min(1, diffMs / totalDurationMs));
@@ -567,10 +576,14 @@ function updateRadialCountdown() {
   const s = sec % 60;
   const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 
+  const descMsg = (state.lastRunResult === 'error' && state.lastRunError)
+    ? `Peringatan: Putaran sebelumnya gagal (${state.lastRunError}). Sistem akan mencoba kembali otomatis.`
+    : `Mode pengawasan berkala aktif. Sistem akan otomatis memindai kelas kembali dalam interval 3-5 menit acak.`;
+
   setHubState(
     'loop',
     `Pengecekan Berikutnya: ${timeStr}`,
-    `Mode pengawasan berkala aktif. Sistem akan otomatis memindai kelas kembali dalam interval 3-5 menit acak.`,
+    descMsg,
     ratio
   );
 }
@@ -659,15 +672,18 @@ async function runAbsen() {
 }
 
 async function startLoop() {
-  try {
-    syncLoopUI(true, Date.now() + 240000);
-    showToast('Mengaktifkan mode pengawasan otomatis…', 'info');
+  const btn = $('btnToggleLoop');
+  const lbl = $('loopBtnLabel');
+  if (btn) btn.disabled = true;
+  if (lbl) lbl.textContent = 'Menghubungkan…';
+  showToast('Mengaktifkan mode pengawasan otomatis di server…', 'info');
 
+  try {
     const res = await GatewayManager.fetchJson('loop/start', { method: 'POST' }, 5000);
     const d = res.data || {};
     if (res.ok && d.ok) {
-      syncLoopUI(true, d.nextRunTs || state.nextRunTs);
-      showToast('Mode pengawasan loop aktif. Aman ditinggal kapan saja.', 'success');
+      syncLoopUI(true, d.nextRunTs || (Date.now() + 240000));
+      showToast('Mode pengawasan loop aktif di server background. Aman ditinggal kapan saja.', 'success');
     } else {
       syncLoopUI(false);
       showToast(d.msg || 'Gagal mengaktifkan mode loop.', 'error');
@@ -676,6 +692,8 @@ async function startLoop() {
   } catch (err) {
     syncLoopUI(false);
     showToast(err?.message || 'Server tidak merespons.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -710,6 +728,10 @@ async function pollStatus() {
     setServerStatus(true);
     const data = res.data;
 
+    // Simpan error & result terakhir untuk visual alert
+    state.lastRunResult = data.lastRunResult || null;
+    state.lastRunError  = data.lastRunError || null;
+
     // Hub metrics
     const lastRunEl = $('hubLastRun');
     if (lastRunEl) {
@@ -718,7 +740,16 @@ async function pollStatus() {
 
     const lastResultEl = $('hubLastResult');
     if (lastResultEl) {
-      lastResultEl.textContent = data.lastRunResult ? data.lastRunResult.toUpperCase() : 'Idle';
+      if (data.lastRunResult === 'error') {
+        lastResultEl.textContent = 'ERROR';
+        lastResultEl.style.color = 'var(--crimson)';
+      } else if (data.lastRunResult === 'selesai') {
+        lastResultEl.textContent = 'SUKSES';
+        lastResultEl.style.color = 'var(--emerald)';
+      } else {
+        lastResultEl.textContent = data.lastRunResult ? data.lastRunResult.toUpperCase() : 'Idle';
+        lastResultEl.style.color = '';
+      }
     }
 
     if (data.running) {

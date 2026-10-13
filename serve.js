@@ -35,6 +35,7 @@ const PORT = process.env.PORT || 8080;
 let agentRunning   = false;
 let lastRunTs      = null;
 let lastRunResult  = null; // 'selesai' | 'error'
+let lastRunError   = null;
 function getPresensiCourseKey(text) {
   if (!text) return 'generic';
   const clean = String(text)
@@ -303,15 +304,20 @@ function runAgent(args = []) {
 
   const agentPath = getAgentPath();
   if (!fs.existsSync(agentPath)) {
-    agentRunning = false;
-    const failMsg = '[ERROR] Scraper gagal: Berkas robot scraper (ethol-agent.js) tidak ditemukan.';
+    agentRunning  = false;
+    lastRunResult = 'error';
+    lastRunError  = 'Berkas robot scraper (ethol-agent.js) tidak ditemukan.';
+    const failMsg = `[ERROR] Scraper gagal: ${lastRunError}`;
     console.log(`[SERVER] ✖ ${failMsg}`);
     for (const client of sseClients) {
       try {
         client.write(`data: ${JSON.stringify({ ts: Date.now(), text: failMsg, raw: failMsg })}\n\n`);
       } catch (_) {}
     }
-    return { ok: false, msg: 'Berkas robot scraper (ethol-agent.js) tidak ditemukan.' };
+    if (loopActive) {
+      scheduleNextLoopRun();
+    }
+    return { ok: false, msg: lastRunError };
   }
   const agentCwd  = path.dirname(agentPath);
   const proc = spawn('node', [agentPath, ...args], { cwd: agentCwd });
@@ -322,6 +328,11 @@ function runAgent(args = []) {
   proc.on('close', (code) => {
     agentRunning  = false;
     lastRunResult = code === 0 ? 'selesai' : 'error';
+    if (code === 0) {
+      lastRunError = null;
+    } else {
+      lastRunError = `Scraper gagal dengan kode keluar ${code}.`;
+    }
     console.log(`[SERVER] ■ Agent selesai (exit code: ${code}) — ${new Date().toLocaleTimeString('id-ID')}\n`);
     if (code !== 0) {
       const failMsg = `[ERROR] Scraper gagal (exit code: ${code}).`;
@@ -340,12 +351,16 @@ function runAgent(args = []) {
   proc.on('error', (err) => {
     agentRunning  = false;
     lastRunResult = 'error';
+    lastRunError  = err.message;
     const failMsg = `[ERROR] Scraper gagal: ${err.message}`;
     console.log(`[SERVER] ✖ ${failMsg}\n`);
     for (const client of sseClients) {
       try {
         client.write(`data: ${JSON.stringify({ ts: Date.now(), text: failMsg, raw: failMsg })}\n\n`);
       } catch (_) {}
+    }
+    if (loopActive) {
+      scheduleNextLoopRun();
     }
   });
 
@@ -454,6 +469,7 @@ function sendServerHeartbeat() {
       loopNextRunTs: loopNextRunTs,
       lastRunTs:     lastRunTs,
       lastRunResult: lastRunResult,
+      lastRunError:  lastRunError,
       timestamp:     Date.now(),
     });
 
@@ -552,6 +568,7 @@ const server = http.createServer((req, res) => {
       running:       agentRunning,
       lastRunTs,
       lastRunResult,
+      lastRunError,
       logCount:      logLines.length,
       loopActive,
       loopNextRunTs,

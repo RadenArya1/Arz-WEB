@@ -72,7 +72,7 @@ flowchart TD
   - **Atomic State Persistence (`attended_keys.json`):** Sistem penguncian state presensi otomatis dengan retensi 90 hari untuk mencegah duplikasi submission.
   - **Executive Presensi Deck:** Radial SVG progress ring countdown yang dinamis, kartu identitas mahasiswa, dan status engine reaktif.
   - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu detail kehadiran dan verifikasi status.
-  - **Dynamic Theme Metamorphosis:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif.
+  - **Dynamic Theme Metamorphosis & Resilient Loop:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif dengan auto-reschedule error resilience dan sinkronisasi kredensial privat CasaOS.
   - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
   - **Concurrent Task Scraper:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (jendela waktu -7 s/d +7 hari & filter status selesai ketat) tersimpan otomatis di `tasks.json`.
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
