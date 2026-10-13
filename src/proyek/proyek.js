@@ -4,20 +4,9 @@
    ========================================================= */
 
 (function initProyekWeb() {
-  const STORAGE_KEY = 'grimoire_web_projects_v15';
+  const STORAGE_KEY = 'grimoire_web_projects_v16';
 
   const DEFAULT_PROJECTS = [
-    {
-      id: 'proj_money_tracker',
-      title: 'Arcanum Finance (Money Tracker)',
-      icon: 'fa-coins',
-      status: 'active',
-      statusLabel: 'Aktif',
-      desc: 'Dashboard FinTech eksekutif pencatatan arus kas, parser struk AI OCR, integrasi sinkronisasi otomatis transaksi Gmail BCA (OAuth 2.0 Client-Side), dan komparasi multi-bulan.',
-      target: 'keuangan.html (Web Mandiri)',
-      url: 'keuangan.html',
-      tags: ['Arcanum Finance', 'Gmail BCA Sync', 'OAuth 2.0', 'Vanilla JS', 'Chart.js', 'AI OCR', 'Cashflow']
-    },
     {
       id: 'proj_ethol_sync',
       title: 'Ethol Academic Notifier',

@@ -79,9 +79,14 @@ if (Test-Path $etholPublicConfig) {
     Remove-Item -Path $etholPublicConfig -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "[1/3] Menyalin file portal inti website (index.html, keuangan.html)..." -ForegroundColor Yellow
+Write-Host "[1/3] Menyalin file portal inti website (index.html)..." -ForegroundColor Yellow
 Copy-Item -Path (Join-Path $sourceDir "index.html") -Destination $targetDir -Force
-Copy-Item -Path (Join-Path $sourceDir "keuangan.html") -Destination $targetDir -Force
+if (Test-Path (Join-Path $targetDir "keuangan.html")) {
+    Remove-Item -Path (Join-Path $targetDir "keuangan.html") -Force -ErrorAction SilentlyContinue
+}
+if (Test-Path (Join-Path $targetDir "src\keuangan")) {
+    Remove-Item -Recurse -Path (Join-Path $targetDir "src\keuangan") -Force -ErrorAction SilentlyContinue
+}
 if (Test-Path (Join-Path $sourceDir "Arz-WEB.md")) {
     Copy-Item -Path (Join-Path $sourceDir "Arz-WEB.md") -Destination $targetDir -Force
 }
@@ -202,7 +207,6 @@ Write-Host "   DEPLOYMENT SUKSES! ($fileCount Berkas Terpasang)" -ForegroundColo
 Write-Host "=========================================" -ForegroundColor Green
 Write-Host "Akses website & backend Anda di:"
 Write-Host "  - Grimoire Dashboard : https://dashboard.raidenarya.my.id" -ForegroundColor Cyan
-Write-Host "  - Arcanum Finance    : https://dashboard.raidenarya.my.id/keuangan.html" -ForegroundColor Cyan
 Write-Host "  - Ethol Notifier     : https://dashboard.raidenarya.my.id/ethol-notifier/" -ForegroundColor Cyan
 Write-Host "  - Portainer CasaOS   : http://100.73.128.8:9000" -ForegroundColor Cyan
 Write-Host ""

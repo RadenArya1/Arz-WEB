@@ -7,7 +7,7 @@
 
 /* ── Design Tokens: Master FinTech / Tech-Ops System ── */
 :root {
-  /* 1. Layered Surface Backgrounds (Harmonized with Grimoire / Arcanum) */
+  /* 1. Layered Surface Backgrounds (Harmonized with Grimoire) */
   --bg-dark-base:        #050a0f;
   --bg-core:             #050a0f;
   --bg-surface-0:        rgba(8, 16, 24, 0.95);

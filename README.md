@@ -30,11 +30,9 @@ flowchart TD
         Nginx[Nginx High-Performance Web Server]
         subgraph WebApps ["Aplikasi Web Aktif"]
             Portal[Grimoire Dashboard Portal]
-            Finance[Arcanum Finance Tracker]
             Ethol[Ethol Academic Notifier]
         end
         Nginx --> Portal
-        Nginx --> Finance
         Nginx --> Ethol
     end
 
@@ -54,18 +52,7 @@ flowchart TD
   - **Interactive Widget Suite:** Jam astronomis, audio ambience switcher, dan quick console.
   - **Aura & Glassmorphism Design:** Tampilan modern dengan efek frosted glass, gradient glow, dan micro-interaction responsif.
 
-### 2. 💎 Arcanum Finance (`keuangan.html`)
-*Executive FinTech Cockpit & Smart Receipt Parser*
-- **Fitur Utama:**
-  - **Dual-Stream Cashflow Ledger:** Pencatatan arus kas murni masuk (*inflow*) dan keluar (*outflow*) tanpa beban kategori kompleks.
-  - **AI OCR Vision (Tesseract.js):** Ekstraksi teks struk transfer & nota belanja otomatis via clipboard paste (`Ctrl + V`) dan drag-drop.
-  - **Smart Gmail BCA Auto-Sync (OAuth 2.0 Client-Side):** Integrasi resmi Google Identity Services (GIS) tanpa backend perantara (Zero-Backend Token Leakage).
-  - **Auto-Check Loop Engine (Mekanisme Seperti Auto Absen):** Pemindaian latar belakang berkala setiap 1 menit (60 detik) dan instant check saat tab browser aktif kembali.
-  - **Otomatis Input ke Kas:** Transaksi BCA resmi (QRIS, m-Transfer, KlikBCA) langsung tercatat ke Pemasukan/Pengeluaran & Saldo dengan notifikasi chime audio-visual.
-  - **Direct Gmail Display:** Tampilan bilah minimalis yang langsung menyajikan alamat email akun Gmail pengguna saja dengan font monospace elegan.
-  - **Dual-Box Multi-Month Analytics:** Komparasi visual berdampingan antara bulan pilihan dan bulan berjalan via Chart.js dual bar.
-
-### 3. 🎓 Ethol Academic Notifier (`ethol-notifier/`)
+### 2. 🎓 Ethol Academic Notifier (`ethol-notifier/`)
 *Executive Presensi Deck & Asisten Akademik Otonom Berkinerja Tinggi*
 - **Fitur Utama:**
   - **High-Performance Direct API Engine (Zero-Browser):** Mengadopsi arsitektur daemon Go (`repinger/ethold`) dengan eksekusi direct CAS SSO dan ETHOL REST API murni, memangkas RAM ke < 30MB dan mempercepat siklus eksekusi dari 30s ke ~2.3 detik.
@@ -78,7 +65,7 @@ flowchart TD
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
   - **Mobile-First & Anti-Scroll Trap Engine:** Antarmuka responsif ramah jempol (100dvh & safe area insets), tata letak grid adaptif seimbang, dan eliminasi total scroll trap untuk pengalaman browsing smartphone yang mulus.
 
-### 4. 🔬 Lab & Visual Inspector (`lab/` — Localhost Sandbox)
+### 3. 🔬 Lab & Visual Inspector (`lab/` — Localhost Sandbox)
 *Laboratorium Visualisasi & Sandbox Pengujian Eksklusif Localhost*
 - **Visual Absen Inspector (`lab/proses-absen/`):** Platform observasi visual alur automasi presensi Ethol step-by-step (CAS login, form filling, validasi sesi, panel lonceng, filter 24 jam, klik kehadiran, dan histori screenshot).
 - **TestSprite Sentinel Hub (`testsprite_tests/`):** Pemantau pengujian otonom dual-suite (Playwright & REST API) dengan brankas 15 akun token dan auto-healing runner.
@@ -128,7 +115,6 @@ Seluruh antarmuka ekosistem dirancang dengan prinsip ergonomi mobile yang ketat:
 
 3. **Buka antarmuka di peramban:**
    - Grimoire Dashboard: `http://localhost:8080`
-   - Arcanum Finance: `http://localhost:8080/keuangan.html`
    - Ethol Notifier: `http://localhost:8080/ethol-notifier`
 
 ---

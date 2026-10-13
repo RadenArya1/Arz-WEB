@@ -1338,7 +1338,6 @@ server.listen(PORT, HOST, () => {
   console.log(`  URL Utama      : http://${HOST === '0.0.0.0' ? '127.0.0.1' : HOST}:${PORT}/`);
   console.log(`  Ethol Notifier : http://${HOST === '0.0.0.0' ? '127.0.0.1' : HOST}:${PORT}/ethol-notifier/`);
   console.log(`  Grimoire Lab   : http://${HOST === '0.0.0.0' ? '127.0.0.1' : HOST}:${PORT}/lab/ (Uji Coba & Tester)`);
-  console.log(`  Arcanum Finance: http://${HOST === '0.0.0.0' ? '127.0.0.1' : HOST}:${PORT}/keuangan.html`);
   console.log(`  Ethol Agent API: http://${HOST === '0.0.0.0' ? '127.0.0.1' : HOST}:${PORT}/api/absen/`);
   console.log('====================================================');
 

@@ -1,7 +1,6 @@
 /* =========================================================
    FITUR: KONSOL NOTIFIKASI WEB (LEMBARAN KANAN ATAS)
-   Terminal Stream Notifikasi, Webhook, Logging Real-Time, &
-   Eksekusi Perintah CLI ("saldo" / "uang") untuk Memunculkan Sisa Uang
+   Terminal Stream Notifikasi, Webhook, & Logging Real-Time
    ========================================================= */
 
 (function initKonsolWeb() {
@@ -58,7 +57,7 @@
           const now = Date.now();
           // Filter hanya log presensi sukses murni dalam rentang waktu 1 hari (24 jam)
           const valid = parsed.filter(item => {
-            if (item.tag === 'USER-COMMAND' || item.level === 'FINANCE') return true;
+            if (item.tag === 'USER-COMMAND') return true;
             if (item.ts) {
               const isRecent = (now - item.ts < ONE_DAY_MS) && (now - item.ts >= 0);
               return isRecent && item.level === 'SUCCESS' && isPresensiSuccess(item.msg);
@@ -86,67 +85,7 @@
     }
   }
 
-  /**
-   * Helper Membaca Data Transaksi & Menghitung Sisa Uang dari Money Tracker
-   */
-  function getMoneyTrackerData() {
-    let list = [];
-    try {
-      const raw = localStorage.getItem('grimoire_keuangan_transaksi_v7') ||
-                  localStorage.getItem('grimoire_keuangan_transaksi_v6') ||
-                  localStorage.getItem('grimoire_keuangan_transaksi_v5');
-      if (raw) {
-        list = JSON.parse(raw);
-      }
-    } catch (e) {
-      console.warn('Gagal membaca data transaksi keuangan:', e);
-    }
 
-    // Fallback seed transaksi awal jika localStorage belum ada
-    if (!list || list.length === 0) {
-      list = [
-        { arus: 'pengeluaran', total: 21000 },
-        { arus: 'pemasukan', total: 2004346 },
-        { arus: 'pemasukan', total: 10000 },
-        { arus: 'pengeluaran', total: 11000 },
-        { arus: 'pengeluaran', total: 15000 },
-        { arus: 'pengeluaran', total: 18400 },
-        { arus: 'pengeluaran', total: 15000 },
-        { arus: 'pemasukan', total: 1500000 },
-        { arus: 'pengeluaran', total: 1302500 },
-        { arus: 'pengeluaran', total: 35000 }
-      ];
-    }
-
-    let totalIncome = 0;
-    let totalExpense = 0;
-
-    if (Array.isArray(list)) {
-      list.forEach(t => {
-        const amt = Number(t.total || 0);
-        if (t.arus === 'pemasukan') {
-          totalIncome += amt;
-        } else {
-          totalExpense += amt;
-        }
-      });
-    }
-
-    const sisaUang = totalIncome - totalExpense;
-    return {
-      transactions: list || [],
-      count: list.length,
-      totalIncome,
-      totalExpense,
-      sisaUang,
-      isSurplus: sisaUang >= 0
-    };
-  }
-
-  function formatRupiah(num) {
-    const prefix = num >= 0 ? '+ Rp ' : '- Rp ';
-    return prefix + Math.abs(Number(num || 0)).toLocaleString('id-ID');
-  }
 
   document.addEventListener('DOMContentLoaded', () => {
     let logs = getStoredLogs();
@@ -321,21 +260,6 @@
         .replace(/"/g, '&quot;');
     }
 
-    /**
-     * Mencetak Rincian Sisa Uang ke Layar Terminal Konsol Hanya Saat Perintah Dijalankan
-     */
-    function printSisaUangCommand() {
-      const data = getMoneyTrackerData();
-      const status = data.isSurplus ? 'SURPLUS ✨' : 'DEFISIT ⚠';
-      const msg = `💰 Sisa Uang (Saldo Bersih): ${formatRupiah(data.sisaUang)} | Total Masuk: Rp ${Number(data.totalIncome).toLocaleString('id-ID')} | Total Keluar: Rp ${Number(data.totalExpense).toLocaleString('id-ID')} (Status: ${status})`;
-
-      addLogEntry('FINANCE', 'MONEY-TRACKER', msg);
-
-      if (typeof playMagicChime === 'function') {
-        playMagicChime();
-      }
-    }
-
     // Expose API Global agar modul lain atau devtools dapat memicu log
     window.GrimoireConsole = {
       log: function(level, tag, msg) {
@@ -347,16 +271,11 @@
         renderLogs();
       },
       simulate: function() {
-        const randomItem = MOCK_SIMULATION_EVENTS[Math.floor(Math.random() * MOCK_SIMULATION_EVENTS.length)];
-        addLogEntry(randomItem.level, randomItem.tag, randomItem.msg);
+        addLogEntry('INFO', 'SYSTEM', 'Simulasi event sistem Grimoire aktif.');
         if (typeof playMagicChime === 'function') {
           playMagicChime();
         }
-      },
-      checkSaldo: function() {
-        printSisaUangCommand();
-      },
-      getMoneyData: getMoneyTrackerData
+      }
     };
 
     // Event Filter Tabs
@@ -394,26 +313,14 @@
       if (!text) return;
 
       const lower = text.toLowerCase();
-      // Perintah khusus untuk memunculkan sisa uang dari Money Tracker
-      if (['saldo', 'uang', 'sisa', 'sisa uang', 'duit', 'keuangan', 'money', 'kas', 'balance', 'finance'].includes(lower)) {
-        // Tampilkan perintah pengguna di konsol
-        addLogEntry('EVENT', 'USER-COMMAND', `> ${text}`);
-        // Munculkan rincian sisa uang dari Money Tracker
-        printSisaUangCommand();
-        logInput.value = '';
-        return;
-      }
+      // Catat echo perintah pengguna di konsol
+      addLogEntry('EVENT', 'USER-COMMAND', `> ${text}`);
 
       // Perintah help/bantuan
       if (['help', 'bantuan', '?'].includes(lower)) {
-        addLogEntry('EVENT', 'USER-COMMAND', `> ${text}`);
-        addLogEntry('INFO', 'CLI-HELP', 'Ketik "saldo" atau "uang" untuk melihat sisa uang terkini dari Money Tracker.');
-        logInput.value = '';
-        return;
+        addLogEntry('INFO', 'CLI-HELP', 'Perintah konsol: ketik teks apa saja untuk mencatat log kustom.');
       }
 
-      // Log kustom biasa
-      addLogEntry('EVENT', 'CUSTOM', text);
       logInput.value = '';
     }
 

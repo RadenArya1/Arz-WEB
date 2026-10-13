@@ -6,10 +6,9 @@
 > 2. **Offline Hanya Tahap Awal Pembuatan Fitur**: Lingkungan lokal/offline hanya berfungsi sebagai ruang kerja sementara (*staging environment*) pada tahapan paling awal saat kode dan fitur baru dirancang serta diuji sebelum siap dipublikasikan ke server web.
 > 3. **Hanya Mencatat Fitur yang Telah Di-deploy & Diedit di Web**: Seluruh spesifikasi, arsitektur, selektor DOM, endpoint, dan logika yang tertuang di dalam dokumen ini **HANYA BERISI FITUR YANG TELAH BERHASIL DI-DEPLOY DAN DIEDIT DARI WEBSITENYA** secara live. Seluruh komponen yang tidak berada di server web produksi tidak boleh dicatat dalam dokumen ini.
 
-Dokumen tunggal ini menggabungkan seluruh panduan arsitektur, konvensi organisasi folder fitur, protokol audit kebersihan proyek, serta spesifikasi teknis terkini dari ekosistem **Arz-WEB**, yang mencakup tiga pilar aplikasi web aktif yang telah dibangun dan terpasang di server produksi:
+Dokumen tunggal ini menggabungkan seluruh panduan arsitektur, konvensi organisasi folder fitur, protokol audit kebersihan proyek, serta spesifikasi teknis terkini dari ekosistem **Arz-WEB**, yang mencakup dua pilar aplikasi web aktif yang telah dibangun dan terpasang di server produksi:
 1. **Grimoire Dashboard Utama** (`index.html`) — Portal sentral web personal bergaya cyber-grimoire transparan borderless dengan peluncur katalog proyek terintegrasi, pemantau telemetri sistem, konsol notifikasi live, dan jam perkamen.
-2. **Arcanum Finance (Money Tracker)** (`keuangan.html`) — Modul pencatatan arus kas (*cashflow dual-stream* inflow/outflow) murni tanpa kategori dengan automasi AI OCR Vision (Tesseract.js), smart regex parser (transfer, QRIS, tarik tunai ATM), integrasi pintar Gmail BCA Auto-Sync via Google Identity Services (GIS) OAuth 2.0 Client-Side, Auto-Check Loop Engine (seperti auto absen) dengan interval berkala 1 menit (60 detik), auto-input kas instan, dan visualisasi komparasi multi-bulan.
-3. **Ethol Academic Notifier** (`ethol-notifier/`) — Modul automasi akademik cerdas berbasis headless Puppeteer & background daemon di CasaOS: Executive Presensi Deck terpadu dengan cincin countdown radial SVG, linimasa kehadiran interaktif real-time, lightbox bukti layar, tray konsol diagnostik server collapsible, pemantau tenggat tugas kuliah (≤ 5 hari), serta metamorfosis tema Velvet Crimson Arcane dinamis saat mode loop.
+2. **Ethol Academic Notifier** (`ethol-notifier/`) — Modul automasi akademik cerdas berbasis headless Puppeteer & background daemon di CasaOS: Executive Presensi Deck terpadu dengan cincin countdown radial SVG, linimasa kehadiran interaktif real-time, lightbox bukti layar, tray konsol diagnostik server collapsible, pemantau tenggat tugas kuliah (≤ 5 hari), serta metamorfosis tema Velvet Crimson Arcane dinamis saat mode loop.
 *(Catatan: Purwarupa uji coba dan tester otonom QA TestSprite diisolasi secara eksklusif di `lab/` dan `testsprite_tests/` untuk lingkungan localhost, dilindungi dari deployment publik).*
 
 ---
@@ -30,7 +29,6 @@ Dokumen tunggal ini menggabungkan seluruh panduan arsitektur, konvensi organisas
 ```
 Arz-WEB/
 ├── index.html                           # Entry Point: Grimoire Dashboard Utama
-├── keuangan.html                        # Entry Point: Arcanum Finance (Money Tracker Standalone)
 ├── serve.js                             # Local Dev HTTP & API Server (Node.js + Puppeteer runner + Crash Guards)
 ├── server.js                            # Alias Entrypoint (node server.js -> serve.js)
 ├── serve-watchdog.js                    # Self-Healing Supervisor (Auto-Restart jika Crash / Liveness Hang)
@@ -76,13 +74,6 @@ Arz-WEB/
 │   └── screenshots/                     # Direktori tangkapan layar bukti presensi sementara (retensi 24 jam)
 │
 └── src/
-    ├── keuangan/                        # FITUR: Pencatatan Keuangan (Money Tracker)
-    │   ├── keuangan.css                 # Styling dashboard, KPI cards, table, OCR dropzone, lightbox
-    │   ├── keuangan.js                  # Controller dual cashflow, Chart.js, dropzone & modal
-    │   ├── parser.js                    # Smart regex parser (nominal IDR, tanggal Indo, QRIS, Tarik Tunai ATM)
-    │   ├── storage.js                   # LocalStorage engine v7, CRUD, & seed transaksi nyata
-    │   └── assets/                      # Bukti transaksi (bukti_tarik_tunai_atm.png, struk acuan)
-    │
     ├── proyek/                          # FITUR: Katalog & Peluncur Proyek Web
     │   ├── proyek.css                   # Styling glassmorphic tiles, filter status & modal popover
     │   └── proyek.js                    # Render dinamis daftar proyek dan peluncur tautan
@@ -114,7 +105,7 @@ Arz-WEB/
 ```
 
 ### 2. Aturan Penamaan & Folder `shared/`
-- **Penamaan Folder**: Gunakan kata benda fungsi yang deskriptif dan konsisten (misal: `proyek/`, `konsol/`, `keuangan/`, `sampul/`, `status/`, `tutup-buku/`). Dilarang menggunakan nama layer di root seperti `controllers/`, `views/`, atau `models/`.
+- **Penamaan Folder**: Gunakan kata benda fungsi yang deskriptif dan konsisten (misal: `proyek/`, `konsol/`, `sampul/`, `status/`, `tutup-buku/`). Dilarang menggunakan nama layer di root seperti `controllers/`, `views/`, atau `models/`.
 - **Folder `shared/`**: Hanya digunakan jika kode/aset dipakai oleh **2 fitur atau lebih** (misal audio chime, background lembaran buku, variabel tema global). Jika hanya dipakai 1 fitur, wajib masuk ke folder fitur tersebut.
 
 ### 3. Protokol WAJIB: Pembersihan File Usang Pasca-Generate (Pruning Protocol)
@@ -124,12 +115,12 @@ Arz-WEB/
 
 #### Kriteria File yang Wajib Dihapus:
 1. **Fitur yang Telah Diganti**: Berkas fitur lama yang UI-nya sudah tidak ditampilkan lagi.
-2. **Tidak Dimuat di Entry Point**: Script (`.js`) atau style (`.css`) yang tidak lagi di-link pada `index.html` atau `keuangan.html`.
+2. **Tidak Dimuat di Entry Point**: Script (`.js`) atau style (`.css`) yang tidak lagi di-link pada `index.html` atau `ethol-notifier/index.html`.
 3. **Duplikat Aset**: Gambar/media yang pernah tercecer di root atau folder acak setelah dipindahkan ke folder fitur.
 4. **File Sampah / Eksperimen**: Berkas pengujian sementara (`test_*.txt`, scratchpad, file spec draft usang).
 
 #### Cara Audit Pembersihan:
-1. Periksa entry point (`index.html`, `keuangan.html`, `serve.js`). Catat seluruh berkas yang aktif dimuat.
+1. Periksa entry point (`index.html`, `ethol-notifier/index.html`, `serve.js`). Catat seluruh berkas yang aktif dimuat.
 2. Bandingkan dengan struktur direktori fisik proyek.
 3. Hapus bersih file/folder yang tidak terpakai menggunakan perintah permanen (`Remove-Item -Force`).
 4. Verifikasi bahwa server berjalan normal tanpa error 404 pada network tab.
@@ -148,7 +139,7 @@ Setiap asisten/pengembang wajib menyajikan laporan ringkasan berkas setelah mela
 
 ### 5. Checklist Cepat Sebelum Menyelesaikan Tugas
 - [x] Semua file fitur baru berada dalam satu folder terisolasi (`src/<fitur>/`).
-- [x] Fitur terhubung sempurna pada entry point (`index.html` / `keuangan.html`).
+- [x] Fitur terhubung sempurna pada entry point (`index.html` / `ethol-notifier/index.html`).
 - [x] **Audit pembersihan tuntas**: Berkas usang dan draft lama telah dihapus.
 - [x] Tidak ada aset duplikat yang tercecer.
 - [x] Laporan transparansi berkas telah disajikan.
@@ -167,7 +158,7 @@ Setiap asisten/pengembang wajib menyajikan laporan ringkasan berkas setelah mela
 
 #### 🧪 Pilar 1: Pre-Deployment Testing Gate (TestSprite Automated Test Gate)
 Sebelum berkas disinkronkan ke server web produksi Nginx, sistem WAJIB melakukan verifikasi pengujian otomatis menggunakan TestSprite:
-1. **Verifikasi Web Target**: Memastikan halaman web yang hendak di-deploy (Grimoire Dashboard `index.html`, Arcanum Finance `keuangan.html`, atau `ethol-notifier/`) telah divalidasi skenario ujinya (`testsprite_tests/`).
+1. **Verifikasi Web Target**: Memastikan halaman web yang hendak di-deploy (Grimoire Dashboard `index.html` atau `ethol-notifier/`) telah divalidasi skenario ujinya (`testsprite_tests/`).
 2. **Kondisi Penghentian (Abort Condition)**: Jika terjadi kegagalan fatal/kritis pada pengujian:
    - Proses deployment ke Nginx **DIBATALKAN SECARA OTOMATIS** (*deployment aborted*).
    - Status shortcut proyek terkait di `src/proyek/proyek.js` otomatis diubah menjadi **"Perbaikan"** (`wip`) disertai catatan kendala (`note: "Gagal lolos pengujian TestSprite: [alasan]"`).
@@ -184,7 +175,7 @@ Sebelum berkas dipindahkan ke website publik, seluruh antarmuka yang diubah/dita
 #### 📝 Pilar 3: Auto-Update File Master Dokumentasi (`Arz-WEB.md`) & Pengalihan Riwayat ke GitHub
 > **LOGIK BARU WAJIB:**
 > Setiap kali kata kunci atau perintah *"pw"* / *"pindahkan ke website"* dipicu, Asisten AI **WAJIB secara otomatis menginspeksi dan memperbarui berkas `Arz-WEB.md`** sebelum atau bersamaan dengan eksekusi deployment:
-1. **Pembaruan Ringkasan Fitur Ekosistem (Header & Overview)**: Memastikan daftar seluruh pilar aplikasi web yang telah dibangun pada pengantar dokumen (paragraf pembuka dan daftar pilar ekosistem) selalu mutakhir (Grimoire Dashboard, Arcanum Finance, Ethol Academic Notifier, dan modul baru lainnya).
+1. **Pembaruan Ringkasan Fitur Ekosistem (Header & Overview)**: Memastikan daftar seluruh pilar aplikasi web yang telah dibangun pada pengantar dokumen (paragraf pembuka dan daftar pilar ekosistem) selalu mutakhir (Grimoire Dashboard, Ethol Academic Notifier, dan modul baru lainnya).
 2. **Pembaruan Seksi Spesifikasi Teknis**: Menambahkan seksi/bab spesifikasi teknis baru atau memperbarui seksi spesifikasi modul terkait jika terdapat fitur, arsitektur, layout, selector, regex, atau konfigurasi sistem baru.
 3. **Pengalihan Riwayat Pembaruan ke GitHub (Eliminasi Manual History Table)**: Fungsi tabel log riwayat di `Arz-WEB.md` ditiadakan/dihapus total. Seluruh riwayat perubahan, catatan commit, dan penambahan fitur dialihkan sepenuhnya ke Git Commit History di GitHub portofolio (`https://github.com/RadenArya1/Arz-WEB/commits/main`).
 4. **Integritas Dokumentasi**: Menjamin dokumentasi selalu mencerminkan kondisi kode 1:1 yang aktif dan terpasang di server produksi.
@@ -197,13 +188,12 @@ Sebelum berkas dipindahkan ke website publik, seluruh antarmuka yang diubah/dita
 - **Konfigurasi Web Server**: Nginx Alpine Container (`root /config/www`) pada CasaOS Home Server.
 - **Tautan Akses Publik (Live HTTPS)**:
   - Grimoire Dashboard Utama: `https://dashboard.raidenarya.my.id/`
-  - Arcanum Finance (Money Tracker): `https://dashboard.raidenarya.my.id/keuangan.html`
+  - Ethol Notifier: `https://dashboard.raidenarya.my.id/ethol-notifier/`
 
 ##### Berkas yang Wajib Disinkronkan:
 1. `index.html` (Grimoire Dashboard Utama)
-2. `keuangan.html` (Arcanum Finance)
-3. `ethol-notifier/` (Modul Mandiri Ethol Notifier)
-4. Seluruh folder `src/` (modul fitur, shared assets, CSS, JS)
+2. `ethol-notifier/` (Modul Mandiri Ethol Notifier)
+3. Seluruh folder `src/` (modul fitur, shared assets, CSS, JS)
 
 ##### Berkas yang DIKECUALIKAN dari Publikasi (Eksklusif Dev / Lokal):
 > [!CAUTION]
@@ -217,7 +207,6 @@ Sebelum berkas dipindahkan ke website publik, seluruh antarmuka yang diubah/dita
 - `serve.js`, `server.js`, `serve-watchdog.js` (dev server lokal Node.js)
 - `Arz-WEB.md`, `AGENTS.md` (master dokumentasi internal pengembang)
 - `deploy.ps1` (skrip automasi lokal)
-- Berkas database `.sql` (`src/keuangan/keuangan.sql`)
 - Folder scratch / temporary artifacts
 
 ##### Perintah Eksekusi Otomatis:
@@ -262,7 +251,6 @@ Katalog Proyek **hanya mengenal 2 status operasional**:
 - **Tabel Registri Ikon Resmi Proyek Arz-WEB:**
   | ID Proyek | Nama Proyek Web | Ikon FontAwesome | Makna Visual Simbolik |
   | :--- | :--- | :--- | :--- |
-  | `proj_money_tracker` | Money Tracker (Keuangan) | `fa-coins` | Koin emas & pencatatan transaksi kas |
   | `proj_ethol_sync` | Ethol Academic Notifier | `fa-calendar-check` | Kalender jadwal kuliah & presensi terverifikasi |
   | `proj_student_web` | Student Website & Tracker | `fa-building-columns` | Pilar gedung kampus universitas & portal akademik |
   | `proj_grimoire_ui` | Grimoire Dashboard - Arz | `fa-book-skull` | Buku sihir interaktif / Arcane Tome |
@@ -305,8 +293,8 @@ Dashboard utama mengusung tema **Arcane Tome / Cyber-Grimoire** bergaya buku sih
 
 ### 4. Lembaran Kanan Atas: Konsol Notifikasi & Webhook (`src/konsol/`)
 - **Layar Terminal Log Arcane Transparan**: Diubah dari warna hijau-hitam pekat padat menjadi kaca terminal transparan `rgba(12, 22, 15, 0.48)` dengan `backdrop-filter: blur(10px)`.
-- **Status Telemetri & Filter**: Menjaga denyut hijau telemetri (*Daemon Listening Aktif*) di atas ubin transparan ber-border lembut. Tab filter log (`Semua`, `Keuangan`, `Info`, `Sukses`, `Peringatan`, `Event`) mendukung *horizontal touch swipe*.
-- **Interactive Input Bar**: Bar prompt teks transparan kaca `rgba(255, 255, 255, 0.35)` dengan aksen emas. Pengguna dapat mengetik perintah teks seperti `saldo` atau `uang` untuk menampilkan ringkasan kas Money Tracker secara instan.
+- **Status Telemetri & Filter**: Menjaga denyut hijau telemetri (*Daemon Listening Aktif*) di atas ubin transparan ber-border lembut. Tab filter log (`Semua`, `Info`, `Sukses`, `Peringatan`, `Event`) mendukung *horizontal touch swipe*.
+- **Interactive Input Bar**: Bar prompt teks transparan kaca `rgba(255, 255, 255, 0.35)` dengan aksen emas. Pengguna dapat mengetik perintah seperti `help` atau pesan kustom untuk dicatat langsung ke konsol.
 
 ### 5. Lembaran Kanan Bawah: Tutup Buku & Status Sistem (`src/tutup-buku/` & `src/status/`)
 - **Widget Metrik Telemetri Sistem**: Berlatar kaca transparan `rgba(255, 250, 240, 0.22)` dengan 4 ubin metrik telemetri (Core Engine, RAM, Latensi, Modul) menggunakan ubin kaca transparan `rgba(255, 255, 255, 0.32)` berbingkai border emas halus.
@@ -315,94 +303,7 @@ Dashboard utama mengusung tema **Arcane Tome / Cyber-Grimoire** bergaya buku sih
 
 ---
 
-## BAGIAN III: SPESIFIKASI MODUL KEUANGAN (ARCANUM FINANCE - `keuangan.html`)
-
-Modul pencatatan keuangan mandiri (**Money Tracker & Cashflow Hub**) dirancang dengan fokus **Keuangan Murni** dan **Nol Friksi Input (Zero Friction)**:
-
-### 1. Konsep Keuangan Murni (Tanpa Kategori)
-Sistem berfokus pada aliran dana masuk dan keluar (**Dual-Stream Cashflow**). Konsep kategori kompleks telah ditiadakan agar pelaporan keuangan bersih, akurat, dan langsung ke intinya:
-- **Pemasukan (Inflow `+`)**: Dana masuk (transfer bank, honor, mutasi saldo masuk). Nominal berwarna hijau emerald (`#4ade80`).
-- **Pengeluaran (Outflow `-`)**: Dana keluar (pembayaran QRIS, transfer kos, belanja, SPBU, tarik tunai ATM). Nominal berwarna rose red (`#f87171`).
-
-### 2. Otomatisasi AI OCR Vision & Ekstraksi Cerdas (`src/keuangan/parser.js`)
-Pengguna tidak perlu menginput atau mengetik nominal uang secara manual:
-- **Metode Input**:
-  - **Tempel Clipboard (`Ctrl + V`)**: Ambil tangkapan layar bukti transfer/struk, lalu tekan `Ctrl + V` di mana saja pada layar.
-  - **Drag-and-Drop & Browse**: Dropzone visual mendukung pengunggahan file gambar secara langsung.
-- **Mesin AI OCR (Tesseract.js Client-Side)**:
-  - Membaca teks pada gambar struk secara lokal di browser, menampilkan animasi pemindaian dan persentase progress live.
-- **Mesin Regex Parser Cerdas Multi-Kanal**:
-  - **Deteksi Otomatis Arus Kas**: Mengenali kata kunci transfer masuk (`"masuk"`, `"dari"`, `"inflow"`, `"cashflow - pemasukan"`) &rarr; `pemasukan`; mengenali pembayaran QRIS/debit (`"pembayaran"`, `"qr"`, `"ke"`, `"qris"`) &rarr; `pengeluaran`.
-  - **Deteksi Cerdas Tarik Tunai ATM (Fitur Baru)**:
-    - Mengenali pola notifikasi penarikan uang tunai di mesin ATM (misal notifikasi m-BCA: *"Pengeluaran sebesar IDR 50,000.00 di TARIKAN ATM untuk kategori Uang Tunai dari 769-301-8724 - TAHAPAN pada tanggal 13 September 2026"*).
-    - Menetapkan secara otomatis: Arus `pengeluaran`, jenis `Tarik Tunai (ATM)`, merchant/pihak `TARIKAN ATM (769-301-8724 - TAHAPAN)`, nominal `Rp 50.000` (IDR murni tanpa desimal sen), tanggal transaksi, dan no rekening referensi `769-301-8724`.
-    - Dilengkapi aset acuan struk: `src/keuangan/assets/bukti_tarik_tunai_atm.png`.
-  - **Ekstraksi Nominal Presisi**: Mendukung format `Rp`, `IDR`, angka titik ribuan, desimal sen (contoh: `IDR 10,000.00` &rarr; `10000`, `IDR 50,000.00` &rarr; `50000`, `Rp. 2,004,346.00` &rarr; `2004346`, `Rp 21.000` &rarr; `21000`).
-  - **Ekstraksi Tanggal & Jam**: Mendukung format angka (`DD/MM/YYYY HH:mm:ss`) dan format nama bulan Bahasa Indonesia (`12 September 2026`, `tanggal 13 September 2026`).
-  - **Ekstraksi Identitas & Merchant QRIS Bersih**: Mengenali nama pengirim transfer serta nama merchant QRIS murni (misal: *BUBUR AYAM JAKARTA MANTAP*, *PECEL TUMPANG BU YULIANTI*, *CIBUS PENS*) secara cerdas tanpa menelan metadata baris tabel rincian transaksi (Pengakuisisi, Lokasi, PAN, Terminal ID).
-  - **Proteksi Anti-Nominal pada Merchant (`isInvalidMerchant`)**: Mencegah string nominal uang (seperti `Rp17.000,00` dari baris `TOTAL PEMBAYARAN`) atau status transaksi (`BERHASIL`, `Pembayaran QR`) tertelan sebagai nama merchant. Memperketat regex marker eksplisit (`pembayaran ke`) dan mengecualikan awalan `TOTAL PEMBAYARAN`.
-  - **Sanitasi Metadata Trailing**: Memfilter otomatis label perbankan dan membersihkan prefix *"Pembayaran ke"* agar kolom pihak/keterangan selalu rapi.
-
-### 3. Kartu Review Cerdas dengan Cashflow Switcher & Field Interaktif
-- Menampilkan tinjauan instan hasil pemindaian sebelum disimpan.
-- Dilengkapi tombol toggle interaktif: **`[Pemasukan (+) | Pengeluaran (-)]`** yang otomatis aktif sesuai deteksi OCR.
-- **Editable Field (*Contenteditable*)**: Kolom *Pihak / Keterangan* dan *Waktu Transaksi* dapat langsung diketik/diedit manual oleh pengguna pada kartu pratinjau sebelum disimpan.
-- Menyediakan pratinjau thumbnail gambar bukti transaksi.
-
-### 4. Empat Metrik KPI Eksekutif
-Dashboard menyajikan empat kartu ringkasan keuangan bulan berjalan:
-1. **Pemasukan Bulan Ini**: Total akumulasi dana masuk bertanda `+ Rp ...` (hijau).
-2. **Pengeluaran Bulan Ini**: Total akumulasi dana keluar bertanda `- Rp ...` (merah).
-3. **Saldo Bersih (Cashflow)**: Selisih Pemasukan dikurangi Pengeluaran (`Pemasukan - Pengeluaran`) dengan badge otomatis `Surplus` (hijau) atau `Defisit` (merah).
-4. **Total Transaksi**: Jumlah keseluruhan transaksi aktif yang tercatat.
-
-### 5. Visualisasi Grafik Multi-Bulan (Chart.js Dual Bar)
-- Visualisasi batang ganda berdampingan per bulan (Juli 2026, Agustus 2026, September 2026).
-- Batang hijau untuk **Pemasukan (+)** dan batang merah untuk **Pengeluaran (-)`.
-
-### 6. Tabel Riwayat Transaksi & Modal Lightbox
-- **Filter Tab**: Pilihan filter instan `[Semua | Pemasukan | Pengeluaran]`.
-- **Pencarian Real-Time**: Kolom pencarian instan berdasarkan pihak pengirim/tujuan, nominal, jenis, atau tanggal.
-- **Badge Arus Kas**: Badge ikonik (*Masuk* hijau vs *Keluar* merah).
-- **Modal Lightbox**: Tombol "Lihat" untuk menginspeksi foto bukti struk asli resolusi tinggi lengkap dengan nomor referensi dan nominal.
-
-### 7. Manajemen State & Persistensi Data (`src/keuangan/storage.js`)
-- Menggunakan `localStorage` browser dengan key aktif `grimoire_keuangan_transaksi_v7`.
-- Menyertakan data seed nyata yang sudah terverifikasi:
-  - `PECEL TUMPANG BU YULIANTI`: Pengeluaran `- Rp 21.000` (13/09/2026 08:08:37 WIB, Ref: `080800993558`).
-  - `m-Info BCA (7693018724)`: Pemasukan `+ Rp 2.004.346` (12/09/2026 15:14:22).
-  - `WIWIN CAHYANI - BCA`: Pemasukan `+ Rp 10.000` (12/09/2026 14:59:00).
-  - Ringkasan September 2026: Pemasukan `Rp 3.514.346`, Pengeluaran `Rp 1.417.900`, Surplus Bersih `+ Rp 2.096.446`, Total Transaksi Aktif: 15.
-
-### 8. Arsitektur Responsif Layar HP (Mobile Viewport Fit & Anti-Scroll Trap)
-- **Eliminasi Zoom-Out & Horizontal Overflow**: Mengunci lebar seluruh komponen dengan `max-width: 100%`, `overflow-x: clip !important` pada `body.keuangan-body`, serta membiarkan `html` bertindak sebagai root scroller alami bebas double-nested container.
-- **Root Touch Scroll Natural & Anti-Trap (`overscroll-behavior-y: auto`)**: Mengizinkan propagasi gestur usapan jempol vertikal tanpa tertelan oleh root container, serta mempertahankan isolasi scroll horizontal pada `.table-scroll-container` (`overscroll-behavior-x: contain; overscroll-behavior-y: auto;`).
-- **Android Safe Area Insets**: Seluruh header (`.app-topbar`) mengadopsi `env(safe-area-inset-top)` dan dynamic padding horizontal agar ramah notch dan punch-hole kamera smartphone.
-- **Text Wrapping Protektif**: Menggunakan `white-space: normal`, `word-break: break-word`, dan `overflow-wrap: anywhere` pada nama merchant dan rincian transaksi panjang (misal QRIS Bank Jatim, ATM BCA).
-- **Grid KPI Adaptif**: Grid kartu KPI menyesuaikan menjadi `2x2` kompak dan fleksibel (`repeat(2, minmax(0, 1fr))`).
-- **Tabel Responsif**: Tabel riwayat transaksi dibungkus dalam `.table-scroll-container` (`-webkit-overflow-scrolling: touch;`) yang dapat digeser horizontal tanpa memicu kebocoran layout atau mengunci scroll vertikal halaman.
-
-### 9. Integrasi Smart Gmail BCA Auto-Sync & Auto-Check Loop Engine (`src/keuangan/`)
-- **100% Client-Side OAuth 2.0 (Google Identity Services - GIS)**:
-  - Otentikasi resmi via Google Identity Services Token Client (`https://accounts.google.com/gsi/client`) dengan cakupan minimal `https://www.googleapis.com/auth/gmail.readonly`.
-  - Token akses disimpan secara aman di memori sesi & cache lokal terenkripsi, tanpa backend server perantara (Zero-Backend Token Leakage).
-- **Permanent Account Lock & Anti-Switching**:
-  - Mengunci akun Gmail yang telah terhubung (`raidenarya070906@gmail.com`) dengan flag `locked: true` dan `login_hint` presisi, mencegah Google memicu dialog ganti akun secara liar kecuali pengguna mengeklik tombol "Ganti Akun" secara eksplisit.
-- **Auto-Sync Loop Engine (Seperti Mekanisme Auto Absen)**:
-  - Beroperasi otomatis di latar belakang dengan interval berkala 1 menit (60 detik) tanpa memerlukan klik manual pengguna.
-  - **Smart Visibility Wake-Up**: Saat pengguna kembali membuka tab browser setelah > 2 menit di aplikasi lain, sistem otomatis memicu instant check ke Gmail API.
-  - **Silent Background Execution**: Mode latar belakang (`isAutoLoop: true`) berjalan senyap dan tidak memunculkan pop-up browser bila sesi token habis.
-- **Ekstraksi Cerdas & Auto-Input ke Kas**:
-  - Mesin parser `email-parser.js` memvalidasi pengirim resmi (`bca@bca.co.id`, `KlikBCA`, `myBCA`), mengekstrak mutasi QRIS, m-Transfer, dan tarikan ATM, serta menolak email non-transaksi finansial (aktivasi device/newsletter).
-  - Jika opsi `Otomatis Input ke Catatan Kas` aktif, transaksi otomatis tercatat ke `KeuanganStorage` (Pemasukan/Pengeluaran & Saldo) disertai notifikasi toast audio-visual chime.
-- **Tampilan Minimalis (Direct Gmail Display)**:
-  - Bilah sinkronisasi Gmail strip secara elegan langsung menyajikan alamat email pengguna (`raidenarya070906@gmail.com`) dengan font monospace tanpa teks pengantar berlebih.
-- **Verifikasi Otonom TestSprite**:
-  - Seluruh 16 kasus uji pada `testsprite_tests/test_email_parser.js` lulus 100% tanpa regresi.
-
----
-
-## BAGIAN IV: SPESIFIKASI ETHOL ACADEMIC NOTIFIER (`ethol-notifier/`)
+## BAGIAN III: SPESIFIKASI ETHOL ACADEMIC NOTIFIER (`ethol-notifier/`)
 
 Modul automasi akademik mandiri (**Ethol Academic Notifier**) beroperasi sebagai pengawas perkuliahan otomatis dan asisten presensi cerdas:
 
@@ -463,7 +364,7 @@ Modul automasi akademik mandiri (**Ethol Academic Notifier**) beroperasi sebagai
 ---
 
 
-## BAGIAN V: RIWAYAT PEMBARUAN & VERSION CONTROL (DIALIHKAN KE GITHUB)
+## BAGIAN IV: RIWAYAT PEMBARUAN & VERSION CONTROL (DIALIHKAN KE GITHUB)
 
 > [!NOTE]
 > ### 🐙 PENGALIHAN FUNGSI RIWAYAT (HISTORY) KE GITHUB
