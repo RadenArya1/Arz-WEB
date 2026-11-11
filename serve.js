@@ -373,15 +373,22 @@ let taskScraperRunning = false;
 function runTaskAgent() {
   if (taskScraperRunning) return { ok: false, msg: 'Scraper tugas sedang berjalan.' };
   taskScraperRunning = true;
-  console.log(`\n[SERVER] ▶ Menjalankan scraper tugas Ethol... ${new Date().toLocaleTimeString('id-ID')}`);
+  console.log(`\n[SERVER] ▶ Menjalankan pemindaian tugas Ethol... ${new Date().toLocaleTimeString('id-ID')}`);
 
-  const scraperPath = path.join(__dirname, 'ethol-notifier', 'ethol-task-scraper.js');
-  if (!fs.existsSync(scraperPath)) {
-    taskScraperRunning = false;
-    return { ok: false, msg: 'Berkas ethol-task-scraper.js tidak ditemukan.' };
+  let agentScript = path.join(__dirname, 'ethol-notifier', 'ethol-agent.js');
+  let agentArgs = ['--tasks-only'];
+
+  if (!fs.existsSync(agentScript)) {
+    agentScript = path.join(__dirname, 'ethol-notifier', 'ethol-task-scraper.js');
+    agentArgs = [];
   }
 
-  const proc = spawn('node', [scraperPath], { cwd: path.dirname(scraperPath) });
+  if (!fs.existsSync(agentScript)) {
+    taskScraperRunning = false;
+    return { ok: false, msg: 'Berkas agent tugas tidak ditemukan.' };
+  }
+
+  const proc = spawn('node', [agentScript, ...agentArgs], { cwd: path.dirname(agentScript) });
 
   proc.stdout.on('data', (d) => {
     const raw = d.toString();

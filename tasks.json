@@ -1,5 +1,18 @@
 {
-  "lastCheck": "2026-10-13T06:49:59.914Z",
-  "totalPending": 0,
-  "tasks": []
+  "lastCheck": "2026-11-10T04:24:48.439Z",
+  "totalPending": 1,
+  "tasks": [
+    {
+      "id": "task_1794284688438_1_0",
+      "title": "Laporan sementara LDR",
+      "matakuliah": "Workshop Embedded System",
+      "dosen": "Afifah Dwi Ramadhani",
+      "deadline": "2026-11-10 21:00:00",
+      "deadline_indonesia": "Selasa, 10 November 2026 - 21:00",
+      "hTag": "H-1",
+      "status": "Belum Mengumpulkan",
+      "timeAgo": "Mendekati Tenggat",
+      "url": "https://ethol.pens.ac.id/mahasiswa/matakuliah/221133/tugas"
+    }
+  ]
 }

@@ -18,8 +18,8 @@ const CONFIG = {
   baseUrl: 'https://ethol.pens.ac.id',
   userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   retentionDays: 90,
-  deadlinePastMaxDays: 7, // Maksimal 1 minggu sebelum (terlambat <= 7 hari yang lalu)
-  deadlineMaxDays: 7, // Maksimal 1 minggu mendatang (mendekati tenggat <= 7 hari ke depan)
+  deadlinePastMaxDays: 7, // Batasan ketat 7 hari ke belakang (terlambat <= 7 hari yang lalu)
+  deadlineMaxDays: 30, // Tugas aktif mendatang hingga 30 hari ke depan
 };
 
 // ─── LOGGING SYSTEM (Master Humanizer Formatting) ───────────
@@ -244,8 +244,8 @@ function calculateHTag(deadlineStr) {
   const d = parseIndonesianDate(deadlineStr);
   if (!d) return 'Aktif';
   const diffDays = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return 'Terlambat';
-  if (diffDays === 0) return 'H-0 (Hari Ini)';
+  if (diffDays < 0) return `Terlambat (${Math.abs(diffDays)}h lalu)`;
+  if (diffDays === 0) return 'Hari Ini';
   return `H-${diffDays}`;
 }
 
@@ -505,6 +505,8 @@ async function runAutoAbsenDanTugas() {
   log.divider();
 
   const isTestMock = process.argv.includes('--test-presensi');
+  const isTasksOnly = process.argv.includes('--tasks-only');
+  const isAbsenOnly = process.argv.includes('--absen-only');
   const statePath = path.join(__dirname, 'attended_keys.json');
   const stateManager = new StateManager(statePath, CONFIG.retentionDays);
 
@@ -540,119 +542,126 @@ async function runAutoAbsenDanTugas() {
     log.info(`Ditemukan ${courses.length} mata kuliah pada TA ${client.activeYear} Semester ${client.activeSemester}.`);
 
     // ─── LANGKAH 3: Pindai Sesi Presensi Aktif (Paralel Concurrency) ───
-    log.step(3, 'Memindai Sesi Presensi Kuliah Terbuka (Paralel Concurrency)');
-    
-    const presenceChecks = await Promise.all(
-      courses.map(async (c) => {
-        const cName = getCourseName(c);
-        try {
-          const activeSession = await client.checkCoursePresence(c);
-          return { c, cName, activeSession };
-        } catch (_) {
-          return { c, cName, activeSession: null };
-        }
-      })
-    );
+    if (!isTasksOnly) {
+      log.step(3, 'Memindai Sesi Presensi Kuliah Terbuka (Paralel Concurrency)');
+      
+      const presenceChecks = await Promise.all(
+        courses.map(async (c) => {
+          const cName = getCourseName(c);
+          try {
+            const activeSession = await client.checkCoursePresence(c);
+            return { c, cName, activeSession };
+          } catch (_) {
+            return { c, cName, activeSession: null };
+          }
+        })
+      );
 
-    for (const item of presenceChecks) {
-      const { c, cName, activeSession } = item;
-      if (activeSession && activeSession.key) {
-        const key = activeSession.key;
-        log.info(`🔥 Sesi presensi aktif terdeteksi: ${cName} (Key: ${key})`);
+      for (const item of presenceChecks) {
+        const { c, cName, activeSession } = item;
+        if (activeSession && activeSession.key) {
+          const key = activeSession.key;
+          log.info(`🔥 Sesi presensi aktif terdeteksi: ${cName} (Key: ${key})`);
 
-        if (stateManager.has(key)) {
-          log.info(`  ✓ Sesi ${cName} (Key: ${key}) sudah pernah dihadiri hari ini. Melewati submission.`);
-          continue;
-        }
+          if (stateManager.has(key)) {
+            log.info(`  ✓ Sesi ${cName} (Key: ${key}) sudah pernah dihadiri hari ini. Melewati submission.`);
+            continue;
+          }
 
-        log.info(`  Mengirim token presensi mahasiswa untuk ${cName}...`);
-        const subResult = await client.submitPresence(c, key);
+          log.info(`  Mengirim token presensi mahasiswa untuk ${cName}...`);
+          const subResult = await client.submitPresence(c, key);
 
-        if (subResult.isSuccess) {
-          const nowStr = formatIndonesianDate(new Date().toISOString());
-          console.log(`[SUKSES] ✓ Presensi Berhasil Tercatat — ${cName} | Dosen: ${c.dosen || 'Dosen Pengampu'} | Waktu: ${nowStr}`);
-          stateManager.addRecord(key, cName, c.dosen);
-          presensiResults.push({
-            course: cName,
-            key: key,
-            message: subResult.message,
-          });
-        } else {
-          log.warn(`  Respon server untuk ${cName}: ${subResult.message}`);
+          if (subResult.isSuccess) {
+            const nowStr = formatIndonesianDate(new Date().toISOString());
+            console.log(`[SUKSES] ✓ Presensi Berhasil Tercatat — ${cName} | Dosen: ${c.dosen || 'Dosen Pengampu'} | Waktu: ${nowStr}`);
+            stateManager.addRecord(key, cName, c.dosen);
+            presensiResults.push({
+              course: cName,
+              key: key,
+              message: subResult.message,
+            });
+          } else {
+            log.warn(`  Respon server untuk ${cName}: ${subResult.message}`);
+          }
         }
       }
-    }
 
-    if (presensiResults.length === 0) {
-      log.info('Tidak ada sesi presensi baru yang perlu disubmit saat ini.');
+      if (presensiResults.length === 0) {
+        log.info('Tidak ada sesi presensi baru yang perlu disubmit saat ini.');
+      }
+    } else {
+      log.info('Mode pemindaian tugas aktif (--tasks-only): Langkah presensi dilewati.');
     }
 
     // ─── LANGKAH 4: Sinkronisasi Tugas Kuliah Mendekati Tenggat (Paralel) ───
-    log.step(4, 'Memeriksa Penugasan Kuliah Mendekati Tenggat (Paralel Concurrency)');
-    
-    const tasksPerCourse = await Promise.all(
-      courses.map(async (c, i) => {
-        const cName = getCourseName(c);
-        try {
-          const rawTasks = await client.fetchCourseTasks(c);
-          return { c, cName, courseIdx: i, rawTasks };
-        } catch (_) {
-          return { c, cName, courseIdx: i, rawTasks: [] };
-        }
-      })
-    );
-
-    for (const item of tasksPerCourse) {
-      const { c, cName, courseIdx, rawTasks } = item;
-      for (const t of rawTasks) {
-        const isSubmitted = !!t.submission_time ||
-                            !!t.submission_file ||
-                            !!t.nomor_tugas_mahasiswa ||
-                            !!t.nomor_tugas_file_mahasiswa ||
-                            t.is_submitted === true ||
-                            t.submitted === 1 ||
-                            (typeof t.status === 'string' && (t.status.toLowerCase().includes('sudah') || t.status.toLowerCase().includes('selesai')));
-        const isClosed = t.tutup === 1 || t.is_closed === true;
-
-        // Jika sudah selesai dikumpulkan atau sudah ditutup, tidak perlu diperlihatkan
-        if (isSubmitted || isClosed) continue;
-
-        const title = t.title || t.judul || 'Tugas Kuliah';
-        const deadline = t.deadline || t.deadline_indonesia || '-';
-        const dObj = parseIndonesianDate(deadline);
-
-        if (dObj) {
-          const diffDays = (dObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-          // Jendela waktu: hanya tampilkan tugas dalam rentang 1 minggu sebelum (-7 hari) hingga 1 minggu mendatang (+7 hari)
-          if (diffDays < -CONFIG.deadlinePastMaxDays || diffDays > CONFIG.deadlineMaxDays) {
-            continue;
+    if (!isAbsenOnly) {
+      log.step(4, 'Memeriksa Penugasan Kuliah Mendekati Tenggat (Paralel Concurrency)');
+      
+      const tasksPerCourse = await Promise.all(
+        courses.map(async (c, i) => {
+          const cName = getCourseName(c);
+          try {
+            const rawTasks = await client.fetchCourseTasks(c);
+            return { c, cName, courseIdx: i, rawTasks };
+          } catch (_) {
+            return { c, cName, courseIdx: i, rawTasks: [] };
           }
+        })
+      );
+
+      for (const item of tasksPerCourse) {
+        const { c, cName, courseIdx, rawTasks } = item;
+        for (const t of rawTasks) {
+          const isSubmitted = !!t.submission_time ||
+                              !!t.submission_file ||
+                              !!t.nomor_tugas_mahasiswa ||
+                              !!t.nomor_tugas_file_mahasiswa ||
+                              t.is_submitted === true ||
+                              (t.submitted !== null && t.submitted !== undefined && t.submitted !== 0) ||
+                              (typeof t.status === 'string' && (t.status.toLowerCase().includes('sudah') || t.status.toLowerCase().includes('selesai')));
+
+          // Jika sudah selesai dikumpulkan oleh mahasiswa, lewati
+          if (isSubmitted) continue;
+
+          const title = t.title || t.judul || 'Tugas Kuliah';
+          const deadline = t.deadline || t.deadline_indonesia || '-';
+          const dObj = parseIndonesianDate(deadline);
+
+          if (dObj) {
+            const diffDays = (dObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+            // Batasan 7 hari ke belakang: hanya sertakan tugas dengan batas maksimal 7 hari yang lalu (-7 hari) hingga 30 hari ke depan
+            if (diffDays < -CONFIG.deadlinePastMaxDays || diffDays > CONFIG.deadlineMaxDays) {
+              continue;
+            }
+          }
+
+          taskResults.push({
+            id: `task_${Date.now()}_${courseIdx}_${taskResults.length}`,
+            title: title,
+            matakuliah: cName,
+            dosen: c.dosen || 'Dosen Pengampu',
+            deadline: deadline,
+            deadline_indonesia: formatIndonesianDate(deadline),
+            hTag: calculateHTag(deadline),
+            status: 'Belum Mengumpulkan',
+            timeAgo: 'Mendekati Tenggat',
+            url: `${CONFIG.baseUrl}/mahasiswa/matakuliah/${c.nomor}/tugas`,
+          });
         }
-
-        taskResults.push({
-          id: `task_${Date.now()}_${courseIdx}_${taskResults.length}`,
-          title: title,
-          matakuliah: cName,
-          dosen: c.dosen || 'Dosen Pengampu',
-          deadline: deadline,
-          deadline_indonesia: formatIndonesianDate(deadline),
-          hTag: calculateHTag(deadline),
-          status: 'Belum Mengumpulkan',
-          timeAgo: 'Mendekati Tenggat',
-          url: `${CONFIG.baseUrl}/mahasiswa/matakuliah/${c.nomor}/tugas`,
-        });
       }
-    }
-    // Urutkan tugas berdasarkan tenggat paling mendesak
-    taskResults.sort((a, b) => {
-      const da = parseIndonesianDate(a.deadline);
-      const db = parseIndonesianDate(b.deadline);
-      if (da && db) return da.getTime() - db.getTime();
-      return 0;
-    });
+      // Urutkan tugas berdasarkan tenggat paling mendesak
+      taskResults.sort((a, b) => {
+        const da = parseIndonesianDate(a.deadline);
+        const db = parseIndonesianDate(b.deadline);
+        if (da && db) return da.getTime() - db.getTime();
+        return 0;
+      });
 
-    saveTasksToFile(taskResults);
-    log.success(`Tersimpan ${taskResults.length} tugas mendesak yang belum dikumpulkan ke tasks.json.`);
+      saveTasksToFile(taskResults);
+      log.success(`Tersimpan ${taskResults.length} tugas yang belum dikumpulkan (batasan 7 hari ke belakang) ke tasks.json.`);
+    } else {
+      log.info('Mode presensi eksklusif (--absen-only): Langkah pemindaian tugas dilewati.');
+    }
 
   } catch (err) {
     log.error(`Kendala pada proses Direct API: ${err.message}`);

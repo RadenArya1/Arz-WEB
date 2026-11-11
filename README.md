@@ -61,7 +61,7 @@ flowchart TD
   - **Activity Feed Timeline:** Linimasa presensi interaktif real-time menggantikan konsol mentah, dilengkapi kartu detail kehadiran dan verifikasi status.
   - **Dynamic Theme Metamorphosis & Resilient Loop:** Transisi warna halus (*0.8s transition*) dari Obsidian Cyan ke Velvet Crimson Arcane saat mode pengawasan loop aktif dengan auto-reschedule error resilience dan sinkronisasi kredensial privat CasaOS.
   - **Collapsible Server Diagnostics:** Konsol teknis terintegrasi di tray drawer bawah yang dapat dilipat agar fokus antarmuka tetap bersih.
-  - **Concurrent Task Scraper:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (jendela waktu -7 s/d +7 hari & filter status selesai ketat) tersimpan otomatis di `tasks.json`.
+  - **Concurrent Task Scraper & Modular CLI Engine:** Sinkronisasi penugasan perkuliahan paralel portal ETHOL PENS (jendela waktu -7 hari s/d +30 hari & filter status selesai ketat) dengan dukungan flag pemindaian modular (`--tasks-only`, `--absen-only`) yang tersimpan otomatis di `tasks.json`.
   - **Multi-Node Fallback Gateway & PWA Ready:** Gerbang proxy failover otomatis dan dukungan Progressive Web App untuk perangkat mobile.
   - **Mobile-First & Anti-Scroll Trap Engine:** Antarmuka responsif ramah jempol (100dvh & safe area insets), tata letak grid adaptif seimbang, dan eliminasi total scroll trap untuk pengalaman browsing smartphone yang mulus.
 

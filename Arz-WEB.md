@@ -328,11 +328,14 @@ Modul automasi akademik mandiri (**Ethol Academic Notifier**) beroperasi sebagai
 - **SSE Real-Time Stream**: Antarmuka terhubung ke endpoint `/api/absen/log-stream` untuk menerima telemetri log langsung dari server secara live tanpa polling blocking.
 - **Sintesis Audio Magic Chime**: Membunyikan nada instrumen sihir Web Audio API saat notifikasi sukses presensi diterima.
 
-### 5. Pengingat Tugas Kuliah (Jendela Waktu -7 s/d +7 Hari & Filter Status Selesai)
+### 5. Pengingat Tugas Kuliah (Jendela Waktu -7 s/d +30 Hari, Flag Eksekusi Modular & Filter Selesai Ketat)
 - **Scraper & REST API Tugas Akademik**: Memantau penugasan kuliah dari portal ETHOL dengan interval berkala saat sesi login aktif.
 - **Filter Status Selesai Ketat**: Mengeliminasi seluruh tugas yang telah selesai dikumpulkan (`submission_time` terisi, berkas pengumpulan terunggah `submission_file`, nomor tugas mahasiswa, status selesai, atau tugas yang telah ditutup dosen `tutup === 1`).
-- **Jendela Waktu Tenggat Dinamis (-7 s/d +7 Hari)**: Hanya menampilkan tugas belum selesai yang memiliki sisa waktu dalam rentang **1 minggu sebelum (maksimal terlambat 7 hari ke belakang)** hingga **1 minggu mendatang (maksimal 7 hari ke depan)**. Tugas kadaluwarsa masa lampau (> 7 hari lalu) otomatis dieliminasi dari `tasks.json`.
-- **Widget Kartu Tugas & Indikator Status**: Menampilkan lencana urgensi (`H-0 Hari Ini`, `H-1`, `H-2`, `Terlambat`), nama mata kuliah, dosen pengampu, dan judul tugas dengan feedback visual status aman jika seluruh tugas aktif telah diselesaikan.
+- **Jendela Waktu Tenggat Dinamis (-7 Hari s/d +30 Hari)**: Menampilkan tugas aktif belum selesai yang memiliki sisa waktu hingga **30 hari ke depan (1 bulan mendatang)** dengan batasan ketat **1 minggu sebelum (maksimal terlambat 7 hari ke belakang)**. Tugas kadaluwarsa masa lampau (> 7 hari lalu) otomatis dieliminasi dari `tasks.json`.
+- **Mode Eksekusi CLI Modular (`--tasks-only` & `--absen-only`)**: Engine `ethol-agent.js` mendukung pemanggilan tersegmentasi melalui argumen CLI: flag `--tasks-only` memfokuskan siklus pemindaian hanya pada katalog tugas perkuliahan tanpa memicu presensi kelas, sedangkan `--absen-only` mengeksekusi sesi kehadiran aktif tanpa memindai tugas.
+- **Integrasi Server Daemon Runner (`serve.js`)**: Pemindaian berkala penugasan latar belakang di `serve.js` (`runTaskAgent()`) memanfaatkan `ethol-agent.js --tasks-only` sebagai runner utama berkecepatan tinggi dengan fallback otomatis ke `ethol-task-scraper.js`.
+- **Label Tag Urgensi Cerdas (`calculateHTag`)**: Lencana urgensi disempurnakan menampilkan feedback dinamis yang akurat: `Hari Ini` (saat tenggat jatuh pada hari pemindaian), `H-${diffDays}` (untuk tugas masa depan), serta rincian durasi keterlambatan `Terlambat (${diffDays}h lalu)`.
+- **Widget Kartu Tugas & Indikator Status**: Menampilkan nama mata kuliah, dosen pengampu, dan judul tugas dengan feedback visual status aman jika seluruh tugas aktif telah diselesaikan.
 
 ### 6. Mode Loop Otomatis di Latar Belakang & Crimson Red Theme
 - **Backend Daemon Loop & Auto-Reschedule Resilience**: Mode loop berjalan persisten di server Node.js (`/api/absen/loop/start`). Penutupan tab atau browser tidak menghentikan putaran pengecekan berkala (interval acak 3 - 5 menit). Daemon `serve.js` dilengkapi auto-reschedule pada seluruh event kegagalan (`proc.on('error')` dan non-zero exit code), serta menyiarkan rincian status error `lastRunError` ke endpoint status dan klien SSE.
